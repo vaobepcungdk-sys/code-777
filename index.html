@@ -312,6 +312,15 @@
       }
       .jitem .pin{ border:1.5px solid var(--panel-line); background:var(--panel); border-radius:9px; width:40px; font-size:16px; color:#b9a98c; }
       .jitem .pin.on{ color:var(--gold-lo); border-color:var(--gold-lo); background:#fff6da; }
+      /* Summary notes (Ghi chú tổng) */
+      .sum-stats{ display:flex; flex-wrap:wrap; gap:6px 16px; font-size:13px; font-weight:700; margin-bottom:12px; }
+      .gnote-wrap{ margin-bottom:4px; }
+      .gnote-wrap .lbl{ font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-bottom:6px; }
+      .gnote-wrap textarea{
+        width:100%; border:1.5px solid var(--panel-line); border-radius:10px; padding:10px 12px; font-family:inherit;
+        font-size:14px; line-height:1.55; background:var(--paper); color:var(--ink); resize:vertical;
+      }
+      .sum-note-text{ margin-top:5px; font-size:14px; line-height:1.55; white-space:pre-wrap; word-break:break-word; }
       .snap-toggle{ border:none; background:none; color:var(--ink-soft); font-weight:800; font-size:12.5px; padding:6px 2px; text-decoration:underline; }
       /* Guess */
       .gslots{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
@@ -458,9 +467,9 @@
 
       <div class="card" id="onlineCard">
         <h2>🌐 Chơi online — phòng cho bạn bè vào cùng</h2>
-        <p style="font-size:13px; line-height:1.55; margin-top:6px;">Kết nối trực tiếp giữa các trình duyệt (WebRTC qua PeerJS): <b>chủ phòng là trọng tài</b>, máy của chủ phòng giữ toàn bộ mã bí mật và chỉ gửi cho mỗi người <b>rack của người khác</b> — rack của chính bạn <b>không bao giờ được gửi xuống máy của bạn</b>. Note và nhật ký vẫn riêng tư trên từng máy.</p>
+        <p style="font-size:13px; line-height:1.55; margin-top:6px;">Kết nối giữa các trình duyệt (WebRTC qua PeerJS): <b>chủ phòng là trọng tài</b>, máy của chủ phòng giữ toàn bộ mã bí mật và chỉ gửi cho mỗi người <b>rack của người khác</b> — rack của chính bạn <b>không bao giờ được gửi xuống máy của bạn</b>. Note và nhật ký vẫn riêng tư trên từng máy. Kết nối ưu tiên nối trực tiếp, nếu hai mạng không xuyên được NAT sẽ tự chuyển qua máy chủ trung chuyển (TURN relay) để vào phòng được.</p>
         <div id="onlineEntry">
-          <label style="font-size:12.5px; font-weight:800;">Tên hiển thị của bạn
+          <label style="font-size:12.5px; font-weight:800;">Tên hiển thị của bạn <span style="font-weight:600; color:var(--ink-soft);">(để trống sẽ tự đặt là “Người chơi …”)</span>
             <input class="txt-in" id="onlineName" maxlength="16" placeholder="Ví dụ: Mark" autocomplete="off" />
           </label>
           <div class="online-grid">
@@ -476,10 +485,13 @@
             </div>
           </div>
           <div class="online-status" id="onlineStatus"></div>
+          <button class="btn-small hidden" id="btnRetryOnline" style="margin-top:8px; padding:10px 16px;">↻ THỬ LẠI</button>
+          <p style="font-size:12px; color:var(--ink-soft); line-height:1.5; margin-top:8px;">Đang kết nối tối đa khoảng 15 giây — nếu quá thời gian, game sẽ báo rõ lý do và cho bấm Thử lại, không treo im nữa.</p>
         </div>
         <div id="lobbyBox" class="hidden">
           <div class="room-code" id="lobbyCode">------</div>
           <p style="text-align:center; font-size:12.5px; color:var(--ink-soft); margin:0;">Gửi mã này cho bạn bè để họ vào phòng (2–5 người).</p>
+          <p style="text-align:center; font-size:12.5px; font-weight:700; margin:6px 0 0;">⚠️ Chủ phòng cần giữ tab này mở và giữ mạng ổn định — đóng tab là phòng kết thúc.</p>
           <div id="lobbyPlayers"></div>
           <div class="cfg-grid" id="lobbyCfg">
             <label>Bộ câu hỏi
@@ -525,6 +537,7 @@
         <div class="turn-banner" id="turnBanner">Lượt 1</div>
         <div style="display:flex; gap:8px; align-items:center;">
           <div class="deck-info" id="deckInfo"></div>
+          <button class="btn-ghost" id="btnSummaryTop">📋 Ghi chú tổng</button>
           <button class="btn-ghost" id="btnNewGame">Ván mới</button>
         </div>
       </div>
@@ -566,6 +579,7 @@
         <header>
           <span class="ttl">📝 Note suy luận</span>
           <span id="pageBtns" style="display:flex; gap:6px; flex-wrap:wrap;"></span>
+          <button class="btn-small" id="btnOpenSummary">📋 Ghi chú tổng</button>
           <button class="btn-small" id="btnPeek">👁 Giữ để nhìn bàn</button>
           <button class="btn-small red" id="btnCloseNote">✕ Đóng</button>
         </header>
@@ -581,6 +595,23 @@
           <div style="flex:1"></div>
           <div class="gslots" id="footSlots" style="gap:6px;"></div>
           <button class="btn-claim" id="btnClaimFoot" style="padding:12px 18px; font-size:15px;">TUYÊN BỐ MÃ!</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ============ SUMMARY NOTES POPUP ============ -->
+    <div class="overlay hidden" id="summaryOverlay" style="z-index:80;">
+      <div class="popup" style="width:min(680px,100%);" role="dialog" aria-modal="true" aria-label="Ghi chú tổng">
+        <header>
+          <span class="ttl">📋 Ghi chú tổng</span>
+          <span id="sumCount" style="font-weight:800; font-size:13px; color:var(--ink-soft);"></span>
+          <button class="btn-small red" id="btnCloseSummary">✕ Đóng</button>
+        </header>
+        <div class="body" id="summaryBody"></div>
+        <footer>
+          <div class="remain">Sửa chữ ngay tại đây cũng được<small>Dùng chung nội dung với ghi chú ở tab Nhật ký câu hỏi.</small></div>
+          <div style="flex:1"></div>
+          <button class="btn-small" id="btnCloseSummaryFoot" style="padding:11px 16px;">Đóng</button>
         </footer>
       </div>
     </div>
@@ -936,7 +967,7 @@
         qdeck:shuffle(qids.slice()), qdiscard:[], qpool:qids,
         online:false, isHost:false, myCanIdx:0,
         turnIdx:0, turnNo:1, phase:'boot', currentQ:null, currentAnswer:null,
-        segLogs:[], logs:[], entryNotes:{}, lastSnapshot:null, dummyRotate:0,
+        segLogs:[], logs:[], entryNotes:{}, generalNote:'', lastSnapshot:null, dummyRotate:0,
         notePages:[], notePageView:0, noteTab:'board', hypWhich:'A',
         guessDraft:[], guessSel:0, noteNew:false, gameOver:false, humanAnswered:false
       };
@@ -1371,8 +1402,21 @@
     $('btnCloseNote').addEventListener('click', closeNote);
     $('noteOverlay').addEventListener('click', function(e){ if(e.target===this) closeNote(); });
     document.addEventListener('keydown', function(e){
-      if(e.key==='Escape'){ closeNote(); if(!$('guessOverlay').classList.contains('hidden')) closeGuess(); }
-      if((e.key==='n' || e.key==='N') && S && !$('gameScreen').classList.contains('hidden') && $('guessOverlay').classList.contains('hidden')) openNote();
+      var t = e.target;
+      var typing = !!(t && (t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.tagName==='SELECT' || t.isContentEditable));
+      if(typing){
+        /* Đang gõ trong ô chữ (ghi chú, tên hiển thị, mã phòng…): KHÔNG phím tắt nào được cướp
+           focus hay render lại trang — đây là nguồn lỗi mất chữ/mất dấu ngày trước (phím "n"
+           từng kích hoạt mở Note -> dựng lại toàn bộ ô nhập giữa chừng). Escape chỉ rời ô nhập. */
+        if(e.key==='Escape' && t.blur) t.blur();
+        return;
+      }
+      if(e.isComposing || e.keyCode===229) return; /* đang compose tiếng Việt: bỏ qua phím tắt */
+      if(e.key==='Escape'){
+        if(!$('summaryOverlay').classList.contains('hidden')){ closeSummary(); return; }
+        closeNote(); if(!$('guessOverlay').classList.contains('hidden')) closeGuess();
+      }
+      if((e.key==='n' || e.key==='N') && S && !$('gameScreen').classList.contains('hidden') && $('guessOverlay').classList.contains('hidden') && $('summaryOverlay').classList.contains('hidden')) openNote();
     });
     var peekBtn = $('btnPeek');
     ['pointerdown'].forEach(function(ev){ peekBtn.addEventListener(ev, function(e){ e.preventDefault(); $('noteOverlay').classList.add('peek'); }); });
@@ -1392,6 +1436,150 @@
       renderNote();
     }
     function closeNote(){ if(window.SFX) SFX.play('popupClose'); $('noteOverlay').classList.add('hidden'); if(S) updateNoteBadge(); }
+
+    /* ---------- Ô NHẬP GHI CHÚ AN TOÀN (chống mất chữ khi gõ tiếng Việt) ----------
+       Nguyên tắc: giá trị tại DOM là nguồn đúng nhất trong lúc đang gõ.
+       - Lưu xuống state bằng debounce 250ms sau khi gõ ổn định, và lưu ngay khi blur/change.
+       - Trong lúc IME đang composition (gõ dấu): không lưu dở, không render lại bất cứ thứ gì
+         chạm vào ô nhập; render bị yêu cầu lúc đó sẽ được hoãn tới compositionend/blur.
+       - Mọi lần buộc phải dựng lại vùng chứa ô nhập đều đi qua guardedNoteRender: chụp lại
+         ô đang focus + vị trí con trỏ + selection trước, dựng xong thì khôi phục nguyên trạng. */
+    var noteEdit = { composing:false };
+    var pendingNoteRender = null;
+    function noteKeyOf(el){
+      if(!el) return null;
+      if(el.id==='generalNote') return 'general';
+      var id = el.getAttribute ? el.getAttribute('data-note') : null;
+      return id ? 'entry:'+id : null;
+    }
+    function commitNoteValue(key, val){
+      if(!S || !key) return;
+      if(key==='general'){ S.generalNote = val; return; }
+      var id = key.slice(6);
+      if(!S.entryNotes[id]) S.entryNotes[id] = { text:'', pinned:false };
+      S.entryNotes[id].text = val;
+    }
+    function activeNoteCapture(){
+      var a = document.activeElement;
+      if(!a || (a.tagName!=='INPUT' && a.tagName!=='TEXTAREA')) return null;
+      var key = noteKeyOf(a); if(!key) return null;
+      var scope = a.closest ? (a.closest('.overlay') || document) : document;
+      return { key:key, value:a.value, scope:scope,
+        start:(typeof a.selectionStart==='number' ? a.selectionStart : a.value.length),
+        end:(typeof a.selectionEnd==='number' ? a.selectionEnd : a.value.length) };
+    }
+    function restoreNoteFocus(cap){
+      if(!cap) return;
+      var sel = cap.key==='general' ? '#generalNote' : '[data-note="'+cap.key.slice(6)+'"]';
+      var el = cap.scope.querySelector(sel); if(!el) return;
+      if(el.value !== cap.value) el.value = cap.value;
+      el.focus();
+      try{ el.setSelectionRange(cap.start, cap.end); }catch(e){}
+    }
+    function guardedNoteRender(fn){
+      if(noteEdit.composing){ pendingNoteRender = fn; return; }
+      var cap = activeNoteCapture();
+      if(cap) commitNoteValue(cap.key, cap.value);
+      fn();
+      if(cap) restoreNoteFocus(cap);
+    }
+    function flushPendingNoteRender(){
+      if(pendingNoteRender && !noteEdit.composing){
+        var f = pendingNoteRender; pendingNoteRender = null;
+        guardedNoteRender(f);
+      }
+    }
+    function wireNoteInputs(container){
+      if(!container) return;
+      container.querySelectorAll('[data-note], #generalNote').forEach(function(inp){
+        if(inp._noteWired) return; inp._noteWired = true;
+        var key = noteKeyOf(inp); if(!key) return;
+        function commit(){ clearTimeout(inp._noteTimer); commitNoteValue(key, inp.value); }
+        inp.addEventListener('compositionstart', function(){ noteEdit.composing = true; });
+        inp.addEventListener('compositionend', function(){ noteEdit.composing = false; commit(); flushPendingNoteRender(); });
+        inp.addEventListener('input', function(e){
+          if(noteEdit.composing || e.isComposing) return; /* đang lên dấu: không lưu dở, không render */
+          clearTimeout(inp._noteTimer);
+          inp._noteTimer = setTimeout(commit, 250);
+        });
+        inp.addEventListener('change', commit);
+        inp.addEventListener('blur', function(){ commit(); flushPendingNoteRender(); });
+      });
+    }
+
+    /* ---------- POPUP GHI CHÚ TỔNG ---------- */
+    function openSummary(){
+      if(!S) return;
+      if(window.SFX) SFX.play('popupOpen');
+      $('summaryOverlay').classList.remove('hidden');
+      renderSummary();
+    }
+    function closeSummary(){
+      var cap = activeNoteCapture(); if(cap) commitNoteValue(cap.key, cap.value);
+      if(window.SFX) SFX.play('popupClose');
+      $('summaryOverlay').classList.add('hidden');
+    }
+    $('btnOpenSummary').addEventListener('click', openSummary);
+    $('btnSummaryTop').addEventListener('click', openSummary);
+    $('btnCloseSummary').addEventListener('click', closeSummary);
+    $('btnCloseSummaryFoot').addEventListener('click', closeSummary);
+    $('summaryOverlay').addEventListener('click', function(e){ if(e.target===this) closeSummary(); });
+    function summaryItems(){
+      var items = [];
+      S.logs.forEach(function(e){
+        var note = S.entryNotes[e.id];
+        if(note && ((note.text && note.text.trim()) || note.pinned)) items.push({ entry:e, note:note });
+      });
+      return items;
+    }
+    function sumItemHTML(it, editable){
+      var e = it.entry, note = it.note;
+      var h = '<div class="jitem"><div class="jh">Lượt '+e.turn+' · <b>'+esc(e.answererName)+'</b> · Câu '+e.qid+': '+esc(e.qtext)+' → <span class="ans">“'+esc(e.answerText)+'”</span></div>';
+      if(editable){
+        h += '<div class="jnote"><input type="text" placeholder="Ghi chú riêng của bạn cho câu này…" value="'+esc(note.text||'')+'" data-note="'+e.id+'"/><button class="pin'+(note.pinned?' on':'')+'" data-pin="'+e.id+'" title="Ghim dòng quan trọng">★</button></div>';
+      } else {
+        h += '<div class="sum-note-text">'+esc(note.text||'(đã ghim, chưa ghi chữ)')+'</div>';
+      }
+      return h + '</div>';
+    }
+    function renderSummary(){
+      guardedNoteRender(function(){
+        var body = $('summaryBody'); if(!body || !S) return;
+        var items = summaryItems();
+        var pinned = items.filter(function(it){ return it.note.pinned; });
+        $('sumCount').textContent = items.length ? (items.length+' ghi chú đã ghi') : '';
+        var page = S.notePages[S.notePages.length-1];
+        var stCount = { 1:0, 2:0, 3:0 };
+        if(page) buildTiles().forEach(function(t){ var st = page.main[t.id]||0; if(st) stCount[st]++; });
+        var h = '<div class="sum-stats"><span>✍️ Đã ghi: <b>'+items.length+' ghi chú</b></span><span>★ Đã ghim: <b>'+pinned.length+'</b></span>'
+          + '<span>Bảng chính Mã #'+S.notePages.length+': còn '+remainingCount()+'/28 khả năng · ✓ '+stCount[3]+' chắc chắn · ? '+stCount[2]+' có thể · ✕ '+stCount[1]+' đã loại</span></div>';
+        h += '<div class="gnote-wrap"><div class="lbl">Ghi chú tổng của cả ván</div>'
+          + '<textarea id="generalNote" rows="3" placeholder="Kết luận chung, hướng suy luận chính, điều phải nhớ… Gõ xong chữ tự lưu, đóng mở lại popup vẫn còn nguyên.">'+esc(S.generalNote||'')+'</textarea></div>';
+        if(pinned.length){
+          h += '<div class="jseg">★ Ghi chú đã ghim</div>';
+          pinned.forEach(function(it){ h += sumItemHTML(it, false); });
+        }
+        if(items.length){
+          var lastSeg = null;
+          items.forEach(function(it){
+            if(it.entry.codeNo!==lastSeg){ lastSeg = it.entry.codeNo; h += '<div class="jseg">— Tất cả ghi chú · Giai đoạn Mã #'+it.entry.codeNo+' của bạn —</div>'; }
+            h += sumItemHTML(it, true);
+          });
+        } else {
+          h += '<p class="legend">Bạn chưa ghi chú nào. Mở sổ Note → tab <b>Nhật ký câu hỏi</b>, ghi vào ô “Ghi chú riêng của bạn cho câu này…” ở từng câu — mọi ghi chú sẽ tự gom về popup này, kể cả ghi chú của các mã trước.</p>';
+        }
+        body.innerHTML = h;
+        wireNoteInputs(body);
+        body.querySelectorAll('[data-pin]').forEach(function(b){
+          b.addEventListener('click', function(){
+            var id = b.dataset.pin;
+            if(!S.entryNotes[id]) S.entryNotes[id] = { text:'', pinned:false };
+            S.entryNotes[id].pinned = !S.entryNotes[id].pinned;
+            renderSummary();
+          });
+        });
+      });
+    }
     function renderNote(){
       /* header: chọn trang mã */
       var pb='';
@@ -1423,9 +1611,13 @@
       renderNoteBody();
     }
     function renderNoteBody(){
-      if(S.noteTab==='board') renderBoardTab('main');
-      else if(S.noteTab==='hyp') renderHypTab();
-      else renderJournal();
+      /* Mọi lần dựng lại thân popup Note đều qua lớp bảo vệ ô nhập: nếu đang gõ ghi chú
+         (kể cả đang composition tiếng Việt) thì hoãn/giữ nguyên focus + con trỏ + chữ. */
+      guardedNoteRender(function(){
+        if(S.noteTab==='board') renderBoardTab('main');
+        else if(S.noteTab==='hyp') renderHypTab();
+        else renderJournal();
+      });
     }
     function pyramidHTML(states, editable, boardKey){
       var tiles = buildTiles(), h='';
@@ -1504,13 +1696,7 @@
           b.textContent = el.classList.contains('hidden') ? '▸ Xem snapshot bàn lúc trả lời' : '▾ Ẩn snapshot';
         });
       });
-      $('noteBody').querySelectorAll('[data-note]').forEach(function(inp){
-        inp.addEventListener('change', function(){
-          var id = inp.dataset.note;
-          if(!S.entryNotes[id]) S.entryNotes[id] = { text:'', pinned:false };
-          S.entryNotes[id].text = inp.value;
-        });
-      });
+      wireNoteInputs($('noteBody'));
       $('noteBody').querySelectorAll('[data-pin]').forEach(function(b){
         b.addEventListener('click', function(){
           var id = b.dataset.pin;
@@ -1640,13 +1826,52 @@
        Mỗi khách chỉ nhận VIEW đã cá nhân hoá: rack của chính khách đó bị thay bằng placeholder "?",
        snapshot trong nhật ký cũng theo góc nhìn của khách (rack mình = null). Rack của một người
        không bao giờ nằm trong payload gửi cho chính người đó. Note không rời khỏi máy của từng người. */
-    var ONL = { peer:null, code:null, isHost:false, myName:'', hostConn:null, ready:false, started:false };
+    var ONL = { peer:null, code:null, isHost:false, myName:'', hostConn:null, ready:false, started:false, joinTimer:null, connTimer:null, brokerOpen:false, connOpen:false, joinedRoom:false, lastAction:null, lastCode:null, guestCounter:0 };
     var HOST = null; /* chỉ tồn tại trên máy chủ phòng */
     var CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    /* ICE: ưu tiên nối trực tiếp qua STUN Google; TURN Open Relay (Metered) là đường dự phòng xuyên NAT / mạng di động / mạng chặn UDP.
+       Relay công cộng miễn phí cho dự án mã nguồn mở — băng thông chia sẻ, không đảm bảo vĩnh viễn. */
+    var ICE_SERVERS = [
+      { urls:'stun:stun.l.google.com:19302' },
+      { urls:'stun:stun1.l.google.com:19302' },
+      { urls:'stun:stun2.l.google.com:19302' },
+      { urls:'stun:stun3.l.google.com:19302' },
+      { urls:'stun:stun4.l.google.com:19302' },
+      { urls:'turn:openrelay.metered.ca:80', username:'openrelayproject', credential:'openrelayproject' },
+      { urls:'turn:openrelay.metered.ca:80?transport=tcp', username:'openrelayproject', credential:'openrelayproject' },
+      { urls:'turn:openrelay.metered.ca:443', username:'openrelayproject', credential:'openrelayproject' },
+      { urls:'turn:openrelay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject' },
+      { urls:'turns:openrelay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject' }
+    ];
+    var PEER_OPTS = { config:{ iceServers: ICE_SERVERS, iceTransportPolicy:'all' }, debug:0 };
+    var JOIN_TIMEOUT_MS = 15000;
     function genRoomCode(){ var s=''; for(var i=0;i<6;i++) s+=CODE_ALPHABET[Math.floor(Math.random()*CODE_ALPHABET.length)]; return s; }
     function peerIdFor(code){ return 'code777room-' + code.toLowerCase(); }
-    function onlStatus(msg){ var e=document.getElementById('onlineStatus'); if(e) e.innerHTML = msg; }
+    function onlStatus(msg){ var e=document.getElementById('onlineStatus'); if(e) e.innerHTML = msg; var l=document.getElementById('lobbyStatus'); }
     function lobbyStatus(msg){ var e=document.getElementById('lobbyStatus'); if(e) e.innerHTML = msg; }
+    function showRetry(show){ var b=document.getElementById('btnRetryOnline'); if(b) b.classList.toggle('hidden', !show); }
+    function clearJoinTimers(){ if(ONL.joinTimer){ clearTimeout(ONL.joinTimer); ONL.joinTimer=null; } if(ONL.connTimer){ clearTimeout(ONL.connTimer); ONL.connTimer=null; } }
+    function destroyPeer(){ clearJoinTimers(); try{ if(ONL.hostConn){ try{ONL.hostConn.close();}catch(e){} ONL.hostConn=null; } }catch(e){} try{ if(ONL.peer){ ONL.peer.destroy(); } }catch(e){} ONL.peer=null; ONL.brokerOpen=false; ONL.connOpen=false; }
+    function failJoin(kind, code){
+      clearJoinTimers(); showRetry(true);
+      if(kind==='notfound'){ onlStatus('⚠️ Không tìm thấy phòng '+esc(code||ONL.code||'')+' — kiểm tra lại mã, hoặc chủ phòng chưa tạo phòng / đã đóng phòng.'); }
+      else if(kind==='ice'){ onlStatus('⚠️ Đã tìm thấy phòng nhưng hai máy không nối được với nhau — kiểm tra mạng rồi bấm Thử lại; nếu vẫn không được, chủ phòng thử tạo phòng mới.'); }
+      else if(kind==='broker'){ onlStatus('⚠️ Mất kết nối tới máy chủ môi giới (PeerJS) — kiểm tra mạng rồi bấm Thử lại. Nếu mạng đang chặn, thử đổi sang mạng khác.'); }
+      else { onlStatus('⚠️ Không vào được phòng — kiểm tra mạng rồi bấm Thử lại.'); }
+    }
+    function watchIce(conn, code){
+      try{
+        conn.on('iceStateChanged', function(state){
+          if(state==='failed'){ failJoin('ice', code); }
+          else if(state==='disconnected' && !ONL.joinedRoom){ /* chờ thêm tới timeout, không báo vội */ }
+          else if(state==='disconnected' && ONL.joinedRoom){ var ob=document.getElementById('obStatus'); if(ob) ob.textContent='⚠️ Kết nối chập chờn (ICE disconnected) — đang tự nối lại qua TURN nếu cần…'; }
+        });
+      }catch(e){}
+      try{
+        var pc = conn.peerConnection;
+        if(pc){ pc.oniceconnectionstatechange = function(){ var st=pc.iceConnectionState; if(st==='failed' && !ONL.joinedRoom) failJoin('ice', code); else if(st==='failed' && ONL.joinedRoom){ var ob=document.getElementById('obStatus'); if(ob) ob.textContent='⚠️ Mất kết nối tới chủ phòng (ICE failed).'; } }; }
+      }catch(e){}
+    }
     /* Feed nhận qua mạng là dữ liệu KHÔNG tin cậy (client của người khác có thể bị sửa):
        escape toàn bộ, chỉ khôi phục đúng thẻ <b> mà host trung thực dùng để in đậm. */
     function sanitizeFeedHTML(html){
@@ -1655,18 +1880,28 @@
       return s;
     }
     function myDisplayName(){
-      var v = (document.getElementById('onlineName').value||'').trim();
-      return v ? v.slice(0,16) : ('Người chơi ' + Math.floor(100+Math.random()*900));
+      var el = document.getElementById('onlineName');
+      var v = (el.value||'').trim();
+      if(v) return v.slice(0,16);
+      /* Tên trống không được gây kẹt ngầm: tự gán tên mặc định và điền lại vào ô để người dùng thấy */
+      ONL.guestCounter = (ONL.guestCounter||0)+1;
+      var def = 'Người chơi ' + ONL.guestCounter;
+      /* Nếu số 1 đã dùng ở lần thử trước trong cùng phiên, tăng dần để tránh trùng trong lobby */
+      try{ el.value = def; }catch(e){}
+      return def;
     }
     function peerAvailable(){ return typeof window.Peer !== 'undefined'; }
 
     /* ---------- TẠO / VÀO PHÒNG ---------- */
     document.getElementById('btnCreateRoom').addEventListener('click', function(){
-      if(!peerAvailable()){ onlStatus('⚠️ Không tải được thư viện kết nối PeerJS (cần mạng). Kiểm tra kết nối rồi tải lại trang.'); return; }
-      ONL.myName = myDisplayName(); ONL.isHost = true; ONL.code = genRoomCode();
-      onlStatus('Đang tạo phòng…');
-      try{ ONL.peer = new Peer(peerIdFor(ONL.code)); }catch(e){ onlStatus('⚠️ Không tạo được phòng: '+esc(e.message||e)); return; }
+      if(!peerAvailable()){ onlStatus('⚠️ Không tải được thư viện kết nối PeerJS (cần mạng). Kiểm tra kết nối rồi tải lại trang.'); showRetry(true); return; }
+      destroyPeer(); showRetry(false);
+      ONL.myName = myDisplayName(); ONL.isHost = true; ONL.code = genRoomCode(); ONL.lastAction='create'; ONL.joinedRoom=false; ONL.brokerOpen=false;
+      onlStatus('Đang tạo phòng… (tối đa ~15 giây)');
+      ONL.joinTimer = setTimeout(function(){ if(!ONL.brokerOpen){ failJoin('broker', ONL.code); } }, JOIN_TIMEOUT_MS);
+      try{ ONL.peer = new Peer(peerIdFor(ONL.code), PEER_OPTS); }catch(e){ onlStatus('⚠️ Không tạo được phòng: '+esc(e.message||e)); showRetry(true); return; }
       ONL.peer.on('open', function(){
+        ONL.brokerOpen=true; clearJoinTimers(); showRetry(false);
         HOST = {
           code: ONL.code, conns:{}, players:[{ peerId:'HOST', name:ONL.myName, kind:'human', score:0, rack:[], codeNo:1, ready:true, connected:true, knownDiscarded:[] }],
           config: readLobbyCfg(), started:false, gameOver:false,
@@ -1676,31 +1911,63 @@
         showLobby(); broadcastLobby();
         onlStatus('');
       });
-      ONL.peer.on('connection', function(conn){ hostOnConnection(conn); });
+      ONL.peer.on('connection', function(conn){ watchIce(conn, ONL.code); hostOnConnection(conn); });
+      ONL.peer.on('disconnected', function(){
+        /* Mất nối tới broker: tự reconnect, giữ nguyên phòng và lobby */
+        lobbyStatus('⚠️ Mất kết nối tới máy chủ môi giới — đang tự nối lại… Chủ phòng cần giữ tab này mở và giữ mạng ổn định.');
+        onlStatus('⚠️ Mất kết nối tới máy chủ môi giới — đang tự nối lại…');
+        try{ if(ONL.peer && !ONL.peer.destroyed) ONL.peer.reconnect(); }catch(e){}
+      });
+      ONL.peer.on('close', function(){ lobbyStatus('⚠️ Kết nối môi giới đã đóng. Bấm Rời phòng rồi tạo phòng mới.'); });
       ONL.peer.on('error', function(err){
-        if(err && err.type==='unavailable-id'){ ONL.code = genRoomCode(); try{ ONL.peer.destroy(); }catch(e){} document.getElementById('btnCreateRoom').click(); return; }
-        onlStatus('⚠️ Lỗi kết nối phòng: '+esc((err&&err.type)||'không rõ')+'. Thử tạo lại phòng.');
+        var t = err && err.type;
+        if(t==='unavailable-id'){ ONL.code = genRoomCode(); try{ ONL.peer.destroy(); }catch(e){} document.getElementById('btnCreateRoom').click(); return; }
+        if(t==='network' || t==='server-error' || t==='socket-error' || t==='socket-closed'){ failJoin('broker', ONL.code); return; }
+        onlStatus('⚠️ Lỗi kết nối phòng: '+esc(t||'không rõ')+'. Thử tạo lại phòng.'); showRetry(true);
       });
     });
     document.getElementById('btnJoinRoom').addEventListener('click', function(){
-      if(!peerAvailable()){ onlStatus('⚠️ Không tải được thư viện kết nối PeerJS (cần mạng). Kiểm tra kết nối rồi tải lại trang.'); return; }
+      if(!peerAvailable()){ onlStatus('⚠️ Không tải được thư viện kết nối PeerJS (cần mạng). Kiểm tra kết nối rồi tải lại trang.'); showRetry(true); return; }
       var code = (document.getElementById('joinCode').value||'').trim().toUpperCase();
-      if(code.length!==6){ onlStatus('⚠️ Mã phòng phải đúng 6 ký tự.'); return; }
-      ONL.myName = myDisplayName(); ONL.isHost = false; ONL.code = code; ONL.ready=false;
-      onlStatus('Đang kết nối tới phòng '+esc(code)+'…');
-      try{ ONL.peer = new Peer(); }catch(e){ onlStatus('⚠️ Không khởi tạo được kết nối.'); return; }
+      if(code.length!==6){ onlStatus('⚠️ Mã phòng phải đúng 6 ký tự.'); showRetry(false); return; }
+      destroyPeer(); showRetry(false);
+      ONL.myName = myDisplayName(); ONL.isHost = false; ONL.code = code; ONL.lastCode = code; ONL.lastAction='join'; ONL.ready=false; ONL.brokerOpen=false; ONL.connOpen=false; ONL.joinedRoom=false;
+      onlStatus('Đang kết nối tới phòng '+esc(code)+'… (tối đa ~15 giây, tự thử qua TURN nếu mạng chặn nối trực tiếp)');
+      /* Timeout tổng 15s: phân biệt chưa nối được broker vs đã thấy chủ phòng nhưng ICE không qua */
+      ONL.joinTimer = setTimeout(function(){
+        if(ONL.joinedRoom) return;
+        if(!ONL.brokerOpen){ failJoin('broker', code); }
+        else if(!ONL.connOpen){ failJoin('ice', code); }
+        else { failJoin('ice', code); }
+      }, JOIN_TIMEOUT_MS);
+      try{ ONL.peer = new Peer(undefined, PEER_OPTS); }catch(e){ onlStatus('⚠️ Không khởi tạo được kết nối.'); showRetry(true); return; }
       ONL.peer.on('open', function(){
+        ONL.brokerOpen=true;
         var conn = ONL.peer.connect(peerIdFor(code), { reliable:true });
         ONL.hostConn = conn;
-        conn.on('open', function(){ conn.send({ type:'join', name:ONL.myName }); onlStatus('Đã nối tới chủ phòng, đang chờ vào phòng…'); });
-        conn.on('data', function(msg){ guestOnData(msg); });
-        conn.on('close', function(){ guestDisconnected('Chủ phòng đã đóng phòng hoặc mất kết nối.'); });
-        conn.on('error', function(){ onlStatus('⚠️ Lỗi đường truyền tới chủ phòng.'); });
+        watchIce(conn, code);
+        conn.on('open', function(){ ONL.connOpen=true; try{ conn.send({ type:'join', name:ONL.myName }); }catch(e){} onlStatus('Đã nối tới chủ phòng, đang chờ vào phòng…'); });
+        conn.on('data', function(msg){ if(msg && (msg.type==='joined' || msg.type==='lobby' || msg.type==='gameStart')){ ONL.joinedRoom=true; clearJoinTimers(); showRetry(false); } guestOnData(msg); });
+        conn.on('close', function(){ if(!ONL.joinedRoom){ failJoin('ice', code); } else { guestDisconnected('Chủ phòng đã đóng phòng hoặc mất kết nối.'); } });
+        conn.on('error', function(err){ if(!ONL.joinedRoom) failJoin('ice', code); else onlStatus('⚠️ Lỗi đường truyền tới chủ phòng.'); });
+      });
+      ONL.peer.on('disconnected', function(){
+        onlStatus('⚠️ Mất kết nối tới máy chủ môi giới — đang tự nối lại…');
+        try{ if(ONL.peer && !ONL.peer.destroyed) ONL.peer.reconnect(); }catch(e){}
+        if(!ONL.joinedRoom){ /* cho reconnect một nhịp, timeout tổng vẫn sẽ báo lỗi broker nếu không hồi */ }
       });
       ONL.peer.on('error', function(err){
-        if(err && err.type==='peer-unavailable'){ onlStatus('⚠️ Không tìm thấy phòng '+esc(code)+' — kiểm tra lại mã, hoặc chủ phòng chưa tạo phòng / đã đóng.'); return; }
-        onlStatus('⚠️ Lỗi kết nối: '+esc((err&&err.type)||'không rõ'));
+        var t = err && err.type;
+        if(t==='peer-unavailable'){ clearJoinTimers(); showRetry(true); onlStatus('⚠️ Không tìm thấy phòng '+esc(code)+' — kiểm tra lại mã, hoặc chủ phòng chưa tạo phòng / đã đóng.'); return; }
+        if(t==='network' || t==='server-error' || t==='socket-error' || t==='socket-closed'){ failJoin('broker', code); return; }
+        if(t==='invalid-id' || t==='invalid-key'){ failJoin('broker', code); return; }
+        if(!ONL.joinedRoom) failJoin('ice', code); else onlStatus('⚠️ Lỗi kết nối: '+esc(t||'không rõ'));
       });
+    });
+    document.getElementById('btnRetryOnline').addEventListener('click', function(){
+      showRetry(false);
+      if(ONL.lastAction==='create'){ document.getElementById('btnCreateRoom').click(); }
+      else { document.getElementById('btnJoinRoom').click(); }
     });
     document.getElementById('btnLeaveLobby').addEventListener('click', function(){ location.reload(); });
     document.getElementById('btnLeaveGame').addEventListener('click', function(){ location.reload(); });
@@ -1766,9 +2033,18 @@
         if(!msg || !msg.type) return;
         if(msg.type==='join'){
           if(HOST.started){ conn.send({ type:'rejected', reason:'Ván đã bắt đầu, phòng không nhận thêm người.' }); return; }
+          var joinName = String(msg.name||'Khách').slice(0,16);
+          /* Dọn ghế ma trước khi thêm: xoá bản ghi cũ mất kết nối, trùng peerId, hoặc trùng tên (vào lại cùng tên + cùng phiên) */
+          HOST.players = HOST.players.filter(function(op){
+            if(op.peerId==='HOST') return true;
+            if(op.peerId===conn.peer){ delete HOST.conns[op.peerId]; return false; }
+            if(!op.connected){ delete HOST.conns[op.peerId]; return false; }
+            /* Người khác trùng tên mặc định (vd cùng là “Người chơi 1” ở máy khác) vẫn là người chơi riêng — không gộp/đá ra */
+            return true;
+          });
           var maxP = (HOST.config && HOST.config.maxPlayers) || 5;
           if(HOST.players.filter(function(p){ return p.kind==='human'; }).length>=maxP){ conn.send({ type:'rejected', reason:'Phòng đã đủ '+maxP+' người theo cấu hình của chủ phòng.' }); return; }
-          var p = { peerId:conn.peer, name:String(msg.name||'Khách').slice(0,16), kind:'human', score:0, rack:[], codeNo:1, ready:false, connected:true, knownDiscarded:[] };
+          var p = { peerId:conn.peer, name:joinName, kind:'human', score:0, rack:[], codeNo:1, ready:false, connected:true, knownDiscarded:[] };
           HOST.players.push(p); HOST.conns[conn.peer]=conn;
           conn.send({ type:'joined', code:HOST.code });
           hostFeedAll('👋 <b>'+esc(p.name)+'</b> vừa vào phòng.', false);
@@ -1794,10 +2070,17 @@
     function hostIndexByPeer(peerId){ for(var i=0;i<HOST.players.length;i++) if(HOST.players[i].peerId===peerId) return i; return -1; }
     function hostOnDisconnect(peerId){
       if(!HOST) return;
-      var p = hostPlayerByPeer(peerId); if(!p || !p.connected) return;
+      var p = hostPlayerByPeer(peerId); if(!p) return;
+      delete HOST.conns[peerId];
+      if(!HOST.started){
+        /* Lobby: xoá hẳn ghế ma, không để bản ghi “mất kết nối” trùng cạnh bản ghi mới khi vào lại */
+        HOST.players = HOST.players.filter(function(op){ return op.peerId!==peerId; });
+        broadcastLobby();
+        return;
+      }
+      if(!p.connected) return;
       p.connected=false; p.ready=false;
-      if(HOST.started){ hostFeedAll('⚠️ <b>'+esc(p.name)+'</b> mất kết nối. Chủ phòng có thể cho máy thay ghế này.', false); hostBroadcastViews(); updateBotReplaceBtn(); }
-      else broadcastLobby();
+      hostFeedAll('⚠️ <b>'+esc(p.name)+'</b> mất kết nối. Chủ phòng có thể cho máy thay ghế này.', false); hostBroadcastViews(); updateBotReplaceBtn();
     }
     function broadcastLobby(){
       if(!HOST) return;
@@ -2046,8 +2329,8 @@
     function guestOnData(msg){
       if(!msg || !msg.type) return;
       switch(msg.type){
-        case 'joined': showLobby(); onlStatus(''); break;
-        case 'rejected': onlStatus('⚠️ '+esc(msg.reason||'Không vào được phòng.')); lobbyStatus('⚠️ '+esc(msg.reason||'')); break;
+        case 'joined': ONL.joinedRoom=true; clearJoinTimers(); showRetry(false); showLobby(); onlStatus(''); break;
+        case 'rejected': clearJoinTimers(); showRetry(true); onlStatus('⚠️ '+esc(msg.reason||'Không vào được phòng.')); lobbyStatus('⚠️ '+esc(msg.reason||'')); break;
         case 'lobby':
           showLobby(); applyCfgToLobbyInputs(msg.config); renderLobbyPlayers(msg.players, msg.config);
           break;
@@ -2077,7 +2360,7 @@
         master:c.master, expert:c.expert, diff:c.botDiff, noteMode:c.noteMode,
         players:[], deck:[], discard:[], qdeck:[], qdiscard:[], qpool:[],
         turnIdx:0, turnNo:1, phase:'boot', currentQ:null, currentAnswer:null,
-        segLogs:[], logs:[], entryNotes:{}, lastSnapshot:null, dummyRotate:0,
+        segLogs:[], logs:[], entryNotes:{}, generalNote:'', lastSnapshot:null, dummyRotate:0,
         notePages:[], notePageView:0, noteTab:'board', hypWhich:'A',
         guessDraft:[], guessSel:0, noteNew:false, gameOver:false, humanAnswered:false,
         online:true, isHost:ONL.isHost, myCanIdx:0, myCodeNo:1
