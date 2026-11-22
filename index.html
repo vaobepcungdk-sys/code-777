@@ -293,6 +293,10 @@
       .ncell.st3 .tile{ outline:3px solid var(--good); outline-offset:1px; }
       .ncell.st3::after{ content:"✓"; position:absolute; top:-7px; right:-5px; width:19px; height:19px; border-radius:50%; background:var(--good); color:#fff; font-size:12px; font-weight:900; display:flex; align-items:center; justify-content:center; }
       .ncell:disabled{ cursor:default; }
+      /* Hàng nút thao tác nhanh của Bảng loại trừ: gạch lá đang hiện / hoàn tác / reset */
+      .board-actions{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+      .board-actions .btn-small{ flex:1 1 auto; }
+      .board-actions .btn-small:disabled{ opacity:.45; cursor:default; }
       .legend{ font-size:12.5px; color:var(--ink-soft); font-weight:600; line-height:1.6; margin-top:10px; }
       /* Journal */
       .jseg{ font-weight:900; font-size:14px; margin:16px 0 6px; color:var(--red-dark); }
@@ -305,8 +309,8 @@
       .jitem .snap .sr{ display:flex; align-items:center; gap:5px; flex-wrap:wrap; padding:2px 4px; border-radius:7px; }
       .jitem .snap .sr.changed{ background:#fff0c2; outline:1px dashed var(--gold-lo); }
       @media (prefers-color-scheme: dark){ .jitem .snap .sr.changed{ background:#4a380e; } }
-      .jitem .snap .who{ font-weight:800; min-width:64px; }
-      .jitem .snap .tag{ font-size:10.5px; font-weight:900; color:#fff; background:var(--rack); border-radius:99px; padding:2px 8px; }
+      .jitem .snap .who{ font-weight:800; min-width:48px; }
+      .jitem .snap .tag{ font-size:10.5px; font-weight:900; color:#fff; background:var(--rack); border-radius:99px; padding:2px 8px; white-space:nowrap; flex:none; }
       .jitem .snap .chg{ font-size:11px; font-weight:800; color:#8a5d05; }
       .jitem .jnote{ display:flex; gap:7px; margin-top:8px; }
       .jitem .jnote input{
@@ -1028,7 +1032,7 @@
 
     /* ---------- Note pages ---------- */
     function newNotePage(first){
-      var page = { main:{}, hypA:{}, hypB:{} };
+      var page = { main:{}, hypA:{}, hypB:{}, undo:[] };
       S.notePages.push(page);
       S.notePageView = S.notePages.length-1;
       if(S.noteMode==='hotro'){
@@ -1813,11 +1817,67 @@
         b.addEventListener('click', function(){
           var page = curPage(), board = b.dataset.board, tid = +b.dataset.tile;
           var states = page[board];
+          if(board==='main') pushBoardUndo(); /* mỗi cú chạm đổi 1 ô của bảng chính = 1 hành động hoàn tác được */
           states[tid] = ((states[tid]||0)+1)%4;
           if(window.SFX) SFX.play('noteTap');
           onCycle(b, board);
+          if(board==='main') refreshBoardActionBtns();
         });
       });
+    }
+    /* ---------- HOÀN TÁC BẢNG LOẠI TRỪ ----------
+       Lịch sử nằm ngay trong từng trang Mã (page.undo): mỗi hành động đổi bảng chính —
+       chạm 1 ô, bấm "Gạch lá đang hiện", hay bấm "Reset bảng" — đều đẩy 1 bản chụp của
+       bảng TRƯỚC khi đổi lên ngăn xếp; Hoàn tác lấy bản chụp gần nhất ra khôi phục.
+       Sang Mã mới là trang mới nên lịch sử tự bắt đầu lại; trang Mã cũ chỉ xem nên
+       không thao tác được và cũng không cần hoàn tác. */
+    function pushBoardUndo(){
+      var page = curPage();
+      if(!page.undo) page.undo = [];
+      page.undo.push(JSON.stringify(page.main));
+      if(page.undo.length>80) page.undo.shift();
+    }
+    function refreshBoardActionBtns(){
+      var bu = $('btnBoardUndo'); if(!bu) return;
+      var page = curPage();
+      bu.disabled = !(isCurrentPage() && page.undo && page.undo.length);
+    }
+    /* Các lá đang nằm trên rack đối thủ mà người chơi nhìn thấy ngay lúc này (theo id lá,
+       tức đúng số + màu/ký hiệu từng lá) — cùng tập lá mà chế độ Hỗ trợ tự gạch đầu mã. */
+    function visibleTileIdsOnTable(){
+      var ids = {};
+      S.players.forEach(function(p, i){
+        if(i===0) return;
+        p.rack.forEach(function(t){ if(t && typeof t.id==='number' && t.id>=0) ids[t.id]=1; });
+      });
+      return ids;
+    }
+    function strikeVisibleTiles(){
+      if(!isCurrentPage()) return;
+      var page = curPage(), ids = visibleTileIdsOnTable(), changed = false;
+      Object.keys(ids).forEach(function(id){ if(page.main[id]!==1) changed = true; });
+      if(!changed) return; /* mọi lá trên bàn đã ✕ rồi: không tạo hành động rỗng */
+      pushBoardUndo();
+      Object.keys(ids).forEach(function(id){ page.main[id]=1; });
+      if(window.SFX) SFX.play('noteTap');
+      renderNoteBody();
+    }
+    function resetBoard(){
+      if(!isCurrentPage()) return;
+      var page = curPage();
+      if(!Object.keys(page.main).length) return; /* bảng đã trống sẵn: không tạo hành động rỗng */
+      pushBoardUndo();
+      page.main = {};
+      if(window.SFX) SFX.play('noteTap');
+      renderNoteBody();
+    }
+    function undoBoardAction(){
+      if(!isCurrentPage()) return;
+      var page = curPage();
+      if(!page.undo || !page.undo.length) return;
+      page.main = JSON.parse(page.undo.pop());
+      if(window.SFX) SFX.play('noteTap');
+      renderNoteBody();
     }
     /* ---------- CẬP NHẬT NHẸ KHI CHẠM 1 Ô LOẠI TRỪ ----------
        Trước đây mỗi cú chạm ô lại dựng lại TOÀN BỘ popup (cả Nhật ký kèm snapshot —
@@ -1854,10 +1914,22 @@
     }
     function renderBoardTab(){
       var page = curPage(), ed = isCurrentPage();
-      $('secBoard').innerHTML = pyramidHTML(page.main, ed, 'main')
+      var undoN = page.undo ? page.undo.length : 0;
+      $('secBoard').innerHTML =
+        '<div class="board-actions">'
+        + '<button class="btn-small" id="btnStrikeVisible" '+(ed?'':'disabled')+'>✕ Gạch lá đang hiện trên bàn</button>'
+        + '<button class="btn-small" id="btnBoardUndo" '+((ed && undoN)?'':'disabled')+'>↩ Hoàn tác</button>'
+        + '<button class="btn-small" id="btnBoardReset" '+(ed?'':'disabled')+'>↺ Reset bảng</button>'
+        + '</div>'
+        + pyramidHTML(page.main, ed, 'main')
         + '<div class="remain" style="margin-top:10px;">Còn '+remainingCount()+' / 28 khả năng chưa bị loại</div>'
         + '<p class="legend">Chạm 1 ô để xoay trạng thái: <b>chưa biết → ✕ loại trừ</b> (mờ, gạch) <b>→ ? có thể</b> (viền vàng) <b>→ ✓ chắc chắn</b> (viền xanh) → chưa biết. '
+        + 'Nút <b>✕ Gạch lá đang hiện trên bàn</b>: gạch ✕ ngay mọi lá đang nằm trên các rack đối thủ bạn đang thấy. <b>↩ Hoàn tác</b>: quay lại 1 hành động đổi bảng gần nhất (kể cả sau khi Reset). '
         + (S.noteMode==='hotro' ? 'Chế độ Hỗ trợ: các thẻ đang nằm trên rack đối thủ đã được máy gạch ✕ sẵn ở đầu mỗi mã.' : 'Chế độ Giấy: bạn tự gạch toàn bộ, kể cả thẻ đang thấy trên rack đối thủ.') + '</p>';
+      var bs = $('btnStrikeVisible'), bu = $('btnBoardUndo'), brs = $('btnBoardReset');
+      if(bs) bs.addEventListener('click', strikeVisibleTiles);
+      if(bu) bu.addEventListener('click', undoBoardAction);
+      if(brs) brs.addEventListener('click', resetBoard);
       wireCells($('secBoard'), function(btn, board){ lightCellUpdate(btn, board); });
     }
     function renderHypTab(){
@@ -1893,7 +1965,7 @@
           var row = '<div class="sr'+(e.changed[i]?' changed':'')+'"><span class="who">'+(i===0?'Bạn':esc(p.name))+':</span>';
           if(i===0) row += S.players[0].rack.map(function(){ return '<span class="tile xs"><span class="num" style="color:#999">?</span></span>'; }).join('');
           else row += r.map(function(t){ return tileHTML(t,'xs'); }).join('');
-          if(e.answererIdx===i) row += '<span class="tag">NGƯỜI TRẢ LỜI — không thấy rack này</span>';
+          if(e.answererIdx===i) row += '<span class="tag">🚫 Không thấy rack này</span>';
           if(e.changed[i]) row += '<span class="chg">← rack mới, vừa đổi so với snapshot trước</span>';
           h += row + '</div>';
         });
@@ -2044,7 +2116,7 @@
        Mỗi khách chỉ nhận VIEW đã cá nhân hoá qua topic riêng của mình: rack của chính khách đó bị thay
        bằng placeholder "?", snapshot trong nhật ký cũng theo góc nhìn của khách (rack mình = null).
        Rack của một người không bao giờ nằm trong payload gửi cho chính người đó. Note không rời khỏi máy. */
-    var BUILD_VERSION = '2026-11-22-r7';
+    var BUILD_VERSION = '2026-11-22-r8';
     /* Danh sách máy chủ chuyển tiếp (broker MQTT công cộng) theo thứ tự ưu tiên — cổng 443 trước
        vì cổng 443 (chuẩn HTTPS) hầu như không mạng nào chặn, kể cả mạng trường học / công ty / quán net
        chặn các cổng lạ như 8084. Cùng một sơ đồ topic code777/v1/... trên mọi broker: chủ phòng tạo
