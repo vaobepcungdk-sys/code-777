@@ -2,7 +2,7 @@
 <html lang="vi">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="data:," />
     <title>Code 777</title>
@@ -12,6 +12,8 @@
     <script src="https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js"></script>
     <style>
       button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      /* Chống zoom trên mobile: chạm 2 lần liên tục không phóng to, không delay chạm */
+      html, body, button, input, select, textarea, summary, [role="button"] { touch-action: manipulation; }
       * { box-sizing: border-box; }
       :root{
         --red-deep:#6d060c; --red-mid:#c0161d; --red-dark:#8f0f16;
@@ -246,7 +248,6 @@
         width:min(780px, 100%); max-height:92dvh; display:flex; flex-direction:column; overflow:hidden;
         transition:opacity .12s;
       }
-      .overlay.peek .popup{ opacity:.06; pointer-events:none; }
       .popup header{
         padding:12px 16px 10px; border-bottom:1px solid var(--panel-line); display:flex; flex-wrap:wrap; gap:8px; align-items:center;
       }
@@ -307,7 +308,7 @@
       .jitem .snap .chg{ font-size:11px; font-weight:800; color:#8a5d05; }
       .jitem .jnote{ display:flex; gap:7px; margin-top:8px; }
       .jitem .jnote input{
-        flex:1; border:1.5px solid var(--panel-line); border-radius:9px; padding:8px 10px; font-family:inherit; font-size:13px;
+        flex:1; border:1.5px solid var(--panel-line); border-radius:9px; padding:8px 10px; font-family:inherit; font-size:16px;
         background:var(--panel); color:var(--ink);
       }
       .jitem .pin{ border:1.5px solid var(--panel-line); background:var(--panel); border-radius:9px; width:40px; font-size:16px; color:#b9a98c; }
@@ -318,7 +319,7 @@
       .gnote-wrap .lbl{ font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-bottom:6px; }
       .gnote-wrap textarea{
         width:100%; border:1.5px solid var(--panel-line); border-radius:10px; padding:10px 12px; font-family:inherit;
-        font-size:14px; line-height:1.55; background:var(--paper); color:var(--ink); resize:vertical;
+        font-size:16px; line-height:1.55; background:var(--paper); color:var(--ink); resize:vertical;
       }
       .sum-note-text{ margin-top:5px; font-size:14px; line-height:1.55; white-space:pre-wrap; word-break:break-word; }
       .snap-toggle{ border:none; background:none; color:var(--ink-soft); font-weight:800; font-size:12.5px; padding:6px 2px; text-decoration:underline; }
@@ -334,6 +335,9 @@
       @media (prefers-color-scheme: dark){ .nsec-head .arr{ color:#ff9d94; } }
       .nsec-head .nsec-hint{ margin-left:auto; font-size:12px; font-weight:700; color:var(--ink-soft); text-align:right; }
       .nsec-head.bar{ border:none; border-top:1px solid var(--panel-line); border-radius:0; background:transparent; }
+      /* Tiêu đề Bảng loại trừ GHIM ở đầu vùng cuộn của popup Note: cuộn sâu trong
+         Nhật ký vẫn thấy và chạm vào là mở bảng ngay tại chỗ. */
+      .nsec-head.sticky-head{ position:sticky; top:0; z-index:6; box-shadow:0 5px 12px rgba(30,0,2,.20); }
       .nsec-body{ padding-top:10px; }
       .sum-chips{ display:flex; gap:6px; flex-wrap:wrap; padding:10px 16px; border-bottom:1px dashed var(--panel-line); }
       .sum-chips .lbl{ width:100%; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); }
@@ -379,7 +383,7 @@
       .online-box p{ font-size:12.5px; color:var(--ink-soft); line-height:1.5; margin:6px 0; }
       .txt-in{
         width:100%; border:1.5px solid var(--panel-line); border-radius:10px; padding:10px 12px; font-family:inherit;
-        font-size:15px; font-weight:700; background:var(--panel); color:var(--ink); margin:5px 0;
+        font-size:16px; font-weight:700; background:var(--panel); color:var(--ink); margin:5px 0;
       }
       .txt-in.code{ text-transform:uppercase; letter-spacing:.22em; font-size:19px; text-align:center; font-weight:900; }
       .btn-red{
@@ -395,7 +399,7 @@
       .cfg-grid{ display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:10px; }
       @media (max-width:560px){ .cfg-grid{ grid-template-columns:1fr; } }
       .cfg-grid label{ font-size:12px; font-weight:800; color:var(--ink-soft); display:block; }
-      .cfg-grid select{ width:100%; margin-top:3px; border:1.5px solid var(--panel-line); border-radius:9px; padding:8px; font-family:inherit; font-weight:700; font-size:13.5px; background:var(--panel); color:var(--ink); }
+      .cfg-grid select{ width:100%; margin-top:3px; border:1.5px solid var(--panel-line); border-radius:9px; padding:8px; font-family:inherit; font-weight:700; font-size:16px; background:var(--panel); color:var(--ink); }
       .online-status{ font-size:13px; font-weight:700; margin-top:10px; line-height:1.5; }
       .online-bar{
         display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px;
@@ -595,14 +599,13 @@
           <span class="ttl">📝 Note suy luận</span>
           <span id="pageBtns" style="display:flex; gap:6px; flex-wrap:wrap;"></span>
           <button class="btn-small" id="btnOpenSummary">📋 Ghi chú tổng</button>
-          <button class="btn-small" id="btnPeek">👁 Giữ để nhìn bàn</button>
           <button class="btn-small red" id="btnCloseNote">✕ Đóng</button>
         </header>
         <button class="nsec-head bar" data-sectoggle="strip" aria-expanded="true"><span class="arr">▾</span><span>🪑 Bàn chơi — các rack đang thấy</span><span class="nsec-hint">chạm để thu gọn / mở ra</span></button>
         <div class="mini-strip" id="miniStrip"></div>
         <div class="body" id="noteBody">
+          <button class="nsec-head sticky-head" data-sectoggle="board" aria-expanded="true"><span class="arr">▾</span><span>Bảng loại trừ</span><span class="nsec-hint" id="boardHeadHint"></span></button>
           <div class="nsec" id="nsec-board">
-            <button class="nsec-head" data-sectoggle="board" aria-expanded="true"><span class="arr">▾</span><span>Bảng loại trừ</span><span class="nsec-hint" id="boardHeadHint"></span></button>
             <div class="nsec-body" id="secBoard"></div>
           </div>
           <div class="nsec" id="nsec-journal">
@@ -1445,9 +1448,13 @@
       }
       if((e.key==='n' || e.key==='N') && S && !$('gameScreen').classList.contains('hidden') && $('guessOverlay').classList.contains('hidden') && $('summaryOverlay').classList.contains('hidden')) openNote();
     });
-    var peekBtn = $('btnPeek');
-    ['pointerdown'].forEach(function(ev){ peekBtn.addEventListener(ev, function(e){ e.preventDefault(); $('noteOverlay').classList.add('peek'); }); });
-    ['pointerup','pointerleave','pointercancel'].forEach(function(ev){ peekBtn.addEventListener(ev, function(){ $('noteOverlay').classList.remove('peek'); }); });
+    /* ---------- CHỐNG ZOOM TRÊN MOBILE (toàn trang) ----------
+       Bỏ hẳn chức năng zoom: meta viewport đã khoá thang scale; CSS touch-action:
+       manipulation chặn double-tap zoom; ở đây chặn thêm cử chỉ pinch của iOS Safari
+       (gesturestart/gesturechange) và sự kiện dblclick phóng to mặc định. */
+    document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+    document.addEventListener('gesturechange', function(e){ e.preventDefault(); });
+    document.addEventListener('dblclick', function(e){ e.preventDefault(); }, { passive:false });
     /* ---------- THU GỌN / MỞ RỘNG TỪNG PHẦN TRONG POPUP NOTE ----------
        5 phần đóng/mở độc lập: strip (dải bàn), board (Bảng loại trừ), journal (Nhật ký),
        hyp (Giả thuyết A/B), foot (khối Đoán & tuyên bố). Trạng thái nằm ở S.noteSec nên
@@ -1485,6 +1492,11 @@
         if(window.SFX) SFX.play('click');
         applyNoteSections();
         if(S.noteSec[key]) renderNoteBody(); /* vừa mở ra: nạp nội dung mới nhất của phần đó */
+        if(key==='board' && S.noteSec[key]){
+          /* Mở Bảng loại trừ từ tiêu đề đang ghim trong lúc đang cuộn sâu ở Nhật ký:
+             đưa ngay nội dung bảng về tầm nhìn (bảng nằm ở đầu vùng cuộn của popup). */
+          var nb = $('noteBody'); if(nb) nb.scrollTop = 0;
+        }
       });
     });
     function openNote(){
@@ -1633,7 +1645,7 @@
         if(page) buildTiles().forEach(function(t){ var st = page.main[t.id]||0; if(st) stCount[st]++; });
         var code = S.sumCode || S.notePages.length;
         var isCurCode = code === S.notePages.length;
-        var codeItems = items.filter(function(it){ return it.entry.codeNo === code; });
+        var codeItems = items.filter(function(it){ return it.entry.codeNo === code; }).reverse(); /* trong từng mã: ghi chú của câu mới nhất lên trước, như Nhật ký */
         var codePinned = codeItems.filter(function(it){ return it.note.pinned; });
         var h = '<div class="sum-stats"><span>✍️ Đã ghi: <b>'+items.length+' ghi chú</b></span><span>★ Đã ghim: <b>'+allPinned.length+'</b></span>'
           + '<span>Bảng chính Mã #'+S.notePages.length+': còn '+remainingCount()+'/28 khả năng · ✓ '+stCount[3]+' chắc chắn · ? '+stCount[2]+' có thể · ✕ '+stCount[1]+' đã loại</span></div>';
@@ -1762,7 +1774,10 @@
     function renderJournal(){
       if(!S.logs.length){ $('secJournal').innerHTML = '<p class="legend">Chưa có câu trả lời nào. Nhật ký sẽ tự ghi: lượt, người trả lời, câu hỏi, đáp án — kèm ảnh chụp toàn bàn (snapshot) tại đúng thời điểm đó theo góc nhìn của bạn.</p>'; return; }
       var h='', lastSeg = null;
-      S.logs.forEach(function(e){
+      /* MỚI NHẤT LÊN TRƯỚC: giai đoạn Mã mới nhất xếp trước; trong từng giai đoạn,
+         lượt mới nhất ở trên, câu 1 nằm cuối cùng — mở nhật ký là thấy ngay câu
+         vừa trả lời. Snapshot + ô ghi chú + nút ghim đi theo đúng từng câu như cũ. */
+      S.logs.slice().reverse().forEach(function(e){
         if(e.codeNo!==lastSeg){ lastSeg = e.codeNo; h += '<div class="jseg">— Giai đoạn Mã #'+e.codeNo+' của bạn —</div>'; }
         var note = S.entryNotes[e.id] || { text:'', pinned:false };
         h += '<div class="jitem"><div class="jh">Lượt '+e.turn+' · <b>'+esc(e.answererName)+'</b> · Câu '+e.qid+': '+esc(e.qtext)+' → <span class="ans">“'+esc(e.answerText)+'”</span></div>'
@@ -1919,7 +1934,7 @@
        Mỗi khách chỉ nhận VIEW đã cá nhân hoá qua topic riêng của mình: rack của chính khách đó bị thay
        bằng placeholder "?", snapshot trong nhật ký cũng theo góc nhìn của khách (rack mình = null).
        Rack của một người không bao giờ nằm trong payload gửi cho chính người đó. Note không rời khỏi máy. */
-    var BUILD_VERSION = '2026-11-21-r3';
+    var BUILD_VERSION = '2026-11-22-r4';
     /* Danh sách máy chủ chuyển tiếp (broker MQTT công cộng) theo thứ tự ưu tiên — cổng 443 trước
        vì cổng 443 (chuẩn HTTPS) hầu như không mạng nào chặn, kể cả mạng trường học / công ty / quán net
        chặn các cổng lạ như 8084. Cùng một sơ đồ topic code777/v1/... trên mọi broker: chủ phòng tạo
