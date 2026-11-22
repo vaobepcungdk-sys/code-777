@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,500;0,700;0,800;0,900;1,700;1,900&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js" integrity="sha384-sLWJsCmP+Z4Qn+HgF7Hi64Djta4fZMu0fcgi3uUL3GFV/ubx2G86LPOuMf7+ZIyX" crossorigin="anonymous"></script>
     <style>
       button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
       /* Chống zoom trên mobile: chạm 2 lần liên tục không phóng to, không delay chạm */
@@ -504,7 +505,7 @@
 
       <div class="card" id="onlineCard">
         <h2>🌐 Chơi online — phòng cho bạn bè vào cùng</h2>
-        <p style="font-size:13px; line-height:1.55; margin-top:6px;">Kết nối qua <b>máy chủ chuyển tiếp tin nhắn</b>: cả chủ phòng và bạn bè đều chủ động nối ra máy chủ chuyển tiếp bằng kết nối bảo mật (như cách các app chat hoạt động) nên <b>không cần hai máy nối trực tiếp vào nhau</b> — mạng nhà, mạng di động hay mạng chặn kết nối ngang hàng đều vào phòng được. Game có <b>nhiều máy chủ chuyển tiếp dự phòng</b> (ưu tiên cổng 443 — cổng web chuẩn hầu như không mạng nào chặn, kể cả mạng trường học / công ty): tạo phòng sẽ tự thử lần lượt tới khi nối được một máy chủ, vào phòng sẽ tự dò qua từng máy chủ để tìm đúng phòng của bạn bè. <b>Chủ phòng là trọng tài</b>, máy của chủ phòng giữ toàn bộ mã bí mật và chỉ gửi cho mỗi người <b>rack của người khác</b> — rack của chính bạn <b>không bao giờ được gửi xuống máy của bạn</b>. Note và nhật ký vẫn riêng tư trên từng máy.</p>
+        <p style="font-size:13px; line-height:1.55; margin-top:6px;">Kết nối qua <b>máy chủ chuyển tiếp tin nhắn</b>: cả chủ phòng và bạn bè đều chủ động nối ra máy chủ chuyển tiếp bằng kết nối bảo mật (như cách các app chat hoạt động) nên <b>không cần hai máy nối trực tiếp vào nhau</b> — mạng nhà, mạng di động hay mạng chặn kết nối ngang hàng đều vào phòng được. <b>Đường truyền chính là Supabase Realtime chạy trên cổng 443</b> — cổng web chuẩn hầu như không mạng nào chặn, kể cả mạng trường học / công ty; nếu đường chính không nối được, game <b>tự rơi về đường dự phòng MQTT</b> (nhiều máy chủ chuyển tiếp) và hiện rõ đang dùng đường nào. Hai máy lỡ ở hai đường khác nhau vẫn tìm thấy nhau nhờ kiểm tra chéo, không báo sai “không tìm thấy phòng”. <b>Chủ phòng là trọng tài</b>, máy của chủ phòng giữ toàn bộ mã bí mật và chỉ gửi cho mỗi người <b>rack của người khác</b> — rack của chính bạn <b>không bao giờ được gửi xuống máy của bạn</b>. Note và nhật ký vẫn riêng tư trên từng máy.</p>
         <div id="onlineEntry">
           <label style="font-size:12.5px; font-weight:800;">Tên hiển thị của bạn <span style="font-weight:600; color:var(--ink-soft);">(để trống sẽ tự đặt là “Người chơi …”)</span>
             <input class="txt-in" id="onlineName" maxlength="16" placeholder="Ví dụ: Mark" autocomplete="off" />
@@ -523,7 +524,7 @@
           </div>
           <div class="online-status" id="onlineStatus"></div>
           <button class="btn-small hidden" id="btnRetryOnline" style="margin-top:8px; padding:10px 16px;">↻ THỬ LẠI</button>
-          <p style="font-size:12px; color:var(--ink-soft); line-height:1.5; margin-top:8px;">Kết nối / dò phòng qua các máy chủ dự phòng tối đa khoảng 15 giây — nếu quá thời gian, game sẽ báo rõ lý do và cho bấm Thử lại, không treo im nữa.</p>
+          <p style="font-size:12px; color:var(--ink-soft); line-height:1.5; margin-top:8px;">Vào phòng sẽ thử đường truyền chính (Supabase, cổng 443) trước khoảng 8 giây, không được mới dò tiếp qua các máy chủ dự phòng — nếu quá thời gian, game sẽ báo rõ lý do và cho bấm Thử lại, không treo im nữa.</p>
         </div>
         <div id="lobbyBox" class="hidden">
           <div class="room-code" id="lobbyCode">------</div>
@@ -2116,7 +2117,13 @@
        Mỗi khách chỉ nhận VIEW đã cá nhân hoá qua topic riêng của mình: rack của chính khách đó bị thay
        bằng placeholder "?", snapshot trong nhật ký cũng theo góc nhìn của khách (rack mình = null).
        Rack của một người không bao giờ nằm trong payload gửi cho chính người đó. Note không rời khỏi máy. */
-    var BUILD_VERSION = '2026-11-22-r8';
+    var BUILD_VERSION = '2026-11-22-r9';
+    /* Đường truyền CHÍNH: Supabase Realtime (WebSocket cổng 443 — cổng web chuẩn, hầu như không mạng nào chặn).
+       Project dùng chung với game Liêng (game-relay, Singapore). anon key là khoá công khai by design,
+       chỉ dùng Realtime broadcast/presence, không có service_role ở bất cứ đâu. */
+    var SUPABASE_URL = 'https://lhclujbunbapajghsvgh.supabase.co';
+    var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoY2x1amJ1bmJhcGFqZ2hzdmdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUzNDA4MDUsImV4cCI6MjExMDkxNjgwNX0.qsn471uVQqevJuVemGbBakQK-iI48it7YHbhl_RPeUw';
+    var SUPABASE_TIMEOUT_MS = 8000; /* thử đường chính: nối + vào kênh lobby tối đa ~8 giây, không được thì rơi về MQTT */
     /* Danh sách máy chủ chuyển tiếp (broker MQTT công cộng) theo thứ tự ưu tiên — cổng 443 trước
        vì cổng 443 (chuẩn HTTPS) hầu như không mạng nào chặn, kể cả mạng trường học / công ty / quán net
        chặn các cổng lạ như 8084. Cùng một sơ đồ topic code777/v1/... trên mọi broker: chủ phòng tạo
@@ -2137,7 +2144,8 @@
     var PROBE_BROKER_MS = 3200;         /* mỗi broker khi dò phòng: nối + chờ meta retained */
     var WELCOME_TIMEOUT_MS = 4000;      /* thấy meta rồi mà chủ phòng không chào trong ngần này -> dò tiếp */
     var DROP_WARN_MS = 20000;           /* trong ván rớt broker quá ngần này mà chưa nối lại -> báo rõ */
-    var ONL = { client:null, code:null, isHost:false, myName:'', token:null, hostConn:null, ready:false, started:false, joinTimer:null, brokerOpen:false, connOpen:false, joinedRoom:false, joinSent:false, lastAction:null, lastCode:null, guestCounter:0, hbTimer:null, sweepTimer:null, brokerIdx:-1, brokerUrl:'', probing:false, probeIdx:0, probeAnyConn:false, probeTimer:null, probeDone:null, offlineSince:0, dropTimer:null, dropWarned:false };
+    var ONL = { client:null, code:null, isHost:false, myName:'', token:null, hostConn:null, ready:false, started:false, joinTimer:null, brokerOpen:false, connOpen:false, joinedRoom:false, joinSent:false, lastAction:null, lastCode:null, guestCounter:0, hbTimer:null, sweepTimer:null, brokerIdx:-1, brokerUrl:'', probing:false, probeIdx:0, probeAnyConn:false, probeTimer:null, probeDone:null, offlineSince:0, dropTimer:null, dropWarned:false,
+      transport:null, sb:null, sbLobby:null, sbPrivCh:null, sbPriv:{}, hostKey:null, metaClient:null, sbTimer:null, sbHostGone:false };
     var HOST = null; /* chỉ tồn tại trên máy chủ phòng */
     var CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
     var TOKEN_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
@@ -2152,18 +2160,26 @@
     function lobbyStatus(msg){ var e=document.getElementById('lobbyStatus'); if(e) e.innerHTML = msg; }
     function showRetry(show){ var b=document.getElementById('btnRetryOnline'); if(b) b.classList.toggle('hidden', !show); }
     function brokerLabel(url){ var m = String(url||'').match(/\/\/([^\/:?#]+)(?::(\d+))?/); return m ? (m[1]+(m[2]?':'+m[2]:'')) : String(url||''); }
-    function clearJoinTimers(){ if(ONL.joinTimer){ clearTimeout(ONL.joinTimer); ONL.joinTimer=null; } if(ONL.probeTimer){ clearTimeout(ONL.probeTimer); ONL.probeTimer=null; } }
+    function clearJoinTimers(){ if(ONL.joinTimer){ clearTimeout(ONL.joinTimer); ONL.joinTimer=null; } if(ONL.probeTimer){ clearTimeout(ONL.probeTimer); ONL.probeTimer=null; } if(ONL.sbTimer){ clearTimeout(ONL.sbTimer); ONL.sbTimer=null; } }
     function clearNetTimers(){ clearJoinTimers(); if(ONL.hbTimer){ clearInterval(ONL.hbTimer); ONL.hbTimer=null; } if(ONL.sweepTimer){ clearInterval(ONL.sweepTimer); ONL.sweepTimer=null; } if(ONL.dropTimer){ clearInterval(ONL.dropTimer); ONL.dropTimer=null; } }
+    function sbTeardown(){
+      clearJoinTimers();
+      try{ if(ONL.sb){ ONL.sb.removeAllChannels(); if(ONL.sb.realtime) ONL.sb.realtime.disconnect(); } }catch(e){}
+      ONL.sb=null; ONL.sbLobby=null; ONL.sbPrivCh=null; ONL.sbPriv={}; ONL.hostKey=null; ONL.sbHostGone=false;
+    }
     function destroyTransport(){
       clearNetTimers();
       try{ if(ONL.client){ ONL.client.removeAllListeners(); ONL.client.end(true); } }catch(e){}
-      ONL.client=null; ONL.hostConn=null; ONL.brokerOpen=false; ONL.connOpen=false; ONL.joinSent=false; ONL.probing=false; ONL.probeDone=null; ONL.offlineSince=0; ONL.dropWarned=false;
+      try{ if(ONL.metaClient){ ONL.metaClient.removeAllListeners(); ONL.metaClient.end(true); } }catch(e){}
+      sbTeardown();
+      ONL.client=null; ONL.metaClient=null; ONL.hostConn=null; ONL.brokerOpen=false; ONL.connOpen=false; ONL.joinSent=false; ONL.probing=false; ONL.probeDone=null; ONL.offlineSince=0; ONL.dropWarned=false; ONL.transport=null;
     }
     function failJoin(kind, code){
       clearJoinTimers(); ONL.probing=false; showRetry(true);
       if(kind==='notfound'){ onlStatus('⚠️ Không tìm thấy phòng '+esc(code||ONL.code||'')+' ở bất kỳ máy chủ chuyển tiếp nào — kiểm tra lại mã, hoặc chủ phòng chưa tạo phòng / đã đóng phòng.'); }
       else if(kind==='broker'){ onlStatus('⚠️ Không nối được bất kỳ máy chủ chuyển tiếp nào (đã thử '+BROKERS.length+' máy chủ, gồm cả cổng 443) — kiểm tra mạng rồi bấm Thử lại. Nếu mạng đang chặn, thử đổi sang mạng khác.'); }
       else if(kind==='version'){ onlStatus('⚠️ Phiên bản game không khớp với chủ phòng — hãy tải lại trang (Ctrl+F5) rồi vào lại.'); }
+      else if(kind==='supabase'){ onlStatus('⚠️ Phòng này đang ở <b>đường truyền chính (Supabase, cổng 443)</b> nhưng máy của bạn hiện không nối được đường đó — phòng có thật, không phải sai mã. Hãy thử đổi mạng (ví dụ tắt Wi-Fi dùng 4G hoặc ngược lại) rồi bấm Thử lại.'); }
       else { onlStatus('⚠️ Không vào được phòng — kiểm tra mạng rồi bấm Thử lại.'); }
     }
     /* Cảnh báo rớt broker kéo dài trong lúc đã ở lobby / trong ván: mqtt.js tự reconnect,
@@ -2197,6 +2213,109 @@
     function mqParse(payload){
       try{ var s = (payload && payload.toString) ? payload.toString() : String(payload||''); if(!s) return null; return JSON.parse(s); }catch(e){ return null; }
     }
+    /* ================= LỚP VẬN CHUYỂN: Supabase (chính) / MQTT (dự phòng) =================
+       Logic game phía trên chỉ nói chuyện qua 3 hàm: transportSendToHost (khách -> chủ),
+       transportSendLobby (thông báo chung của phòng), và conn.send trong hostConnFor (chủ -> từng khách).
+       Ánh xạ kênh Supabase từ topic MQTT: lobby = code777-v1-<CODE>-lobby (Presence + broadcast),
+       khách->chủ = broadcast "to-host" trên lobby, chủ->khách = kênh riêng code777-v1-<CODE>-p-<token>, event "msg". */
+    function sbAvailable(){ return typeof window.supabase !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function'; }
+    function sbLobbyName(code){ return 'code777-v1-'+code+'-lobby'; }
+    function sbPrivName(code, token){ return 'code777-v1-'+code+'-p-'+token; }
+    function transportLabel(){
+      if(ONL.transport==='supabase') return 'đường truyền chính Supabase (cổng 443)';
+      if(ONL.transport==='mqtt') return 'đường dự phòng MQTT ('+brokerLabel(ONL.brokerUrl)+')';
+      return 'đang kết nối…';
+    }
+    function sbCreateClient(){
+      return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { realtime:{ params:{ eventsPerSecond:20 } } });
+    }
+    function transportSendToHost(msg){
+      if(ONL.transport==='supabase'){
+        if(ONL.sbLobby){ try{ ONL.sbLobby.send({ type:'broadcast', event:'to-host', payload:{ token:ONL.token, msg:msg } }); }catch(e){} }
+      } else {
+        mqPublish(topicToHost(ONL.code), { token: ONL.token, msg: msg });
+      }
+    }
+    function transportSendLobby(msg){
+      if(ONL.transport==='supabase'){
+        if(ONL.sbLobby){ try{ ONL.sbLobby.send({ type:'broadcast', event:'lobby', payload:msg }); }catch(e){} }
+      } else {
+        mqPublish(topicLobby(ONL.code), msg);
+      }
+    }
+    /* Chủ -> 1 khách qua Supabase: kênh riêng của khách đó; xếp hàng nếu kênh chưa kịp mở. */
+    function sbSendPriv(token, msg){
+      if(!ONL.sb) return;
+      var rec = ONL.sbPriv[token];
+      if(!rec){
+        rec = ONL.sbPriv[token] = { ch:null, joined:false, q:[] };
+        rec.ch = ONL.sb.channel(sbPrivName(ONL.code, token), { config:{ broadcast:{ self:false } } });
+        rec.ch.subscribe(function(st){
+          if(st==='SUBSCRIBED'){ rec.joined=true; var q=rec.q.splice(0); q.forEach(function(m){ try{ rec.ch.send({ type:'broadcast', event:'msg', payload:m }); }catch(e){} }); }
+          else if(st==='CLOSED' || st==='CHANNEL_ERROR'){ rec.joined=false; }
+        });
+      }
+      if(rec.joined){ try{ rec.ch.send({ type:'broadcast', event:'msg', payload:msg }); }catch(e){} }
+      else rec.q.push(msg);
+    }
+    function startHeartbeat(){
+      if(ONL.hbTimer) clearInterval(ONL.hbTimer);
+      ONL.hbTimer = setInterval(function(){ transportSendToHost({ type:'ping' }); }, 8000);
+    }
+    /* Kiểm tra chéo MQTT: đọc meta retained của phòng (nếu có) để biết phòng đang ở đường nào.
+       cb(metaOrNull, anyBrokerConnected). Dùng khi Supabase không thấy chủ phòng. */
+    function guestCrossCheckMqtt(code, cb){
+      if(!mqttAvailable()){ cb(null, false); return; }
+      var done=false, anyConn=false, idx=0;
+      function finish(meta){ if(done) return; done=true; cb(meta, anyConn); }
+      function step(){
+        if(done) return;
+        if(idx>=BROKERS.length){ finish(null); return; }
+        var url=BROKERS[idx++], settled=false, client=null;
+        var timer=setTimeout(function(){ if(settled) return; settled=true; try{ if(client){ client.removeAllListeners(); client.end(true); } }catch(e){} step(); }, PROBE_BROKER_MS);
+        try{
+          client = window.mqtt.connect(url, { clientId:'c777x-'+ONL.token, connectTimeout:2800, reconnectPeriod:0, keepalive:15, clean:true });
+        }catch(e){ clearTimeout(timer); step(); return; }
+        client.on('connect', function(){ anyConn=true; try{ client.subscribe(topicMeta(code), { qos:1 }); }catch(e){} });
+        client.on('message', function(topic, payload){
+          if(topic!==topicMeta(code) || settled) return;
+          settled=true; clearTimeout(timer);
+          var meta = (payload && payload.length) ? mqParse(payload) : null;
+          try{ client.removeAllListeners(); client.end(true); }catch(e){}
+          finish(meta);
+        });
+        client.on('error', function(){});
+      }
+      step();
+    }
+    /* Chủ phòng ở Supabase vẫn đăng ký meta retained lên MQTT kèm cờ transport="supabase",
+       để khách lỡ rơi về MQTT đọc được và không báo sai "không tìm thấy phòng". */
+    function hostCrossMetaPublish(){
+      if(!mqttAvailable()) return;
+      var idx=0;
+      function step(){
+        if(idx>=BROKERS.length || ONL.transport!=='supabase' || !ONL.isHost) return;
+        var url=BROKERS[idx++], settled=false, client=null;
+        var timer=setTimeout(function(){ if(settled) return; settled=true; try{ if(client){ client.removeAllListeners(); client.end(true); } }catch(e){} step(); }, 4500);
+        try{
+          client = window.mqtt.connect(url, { clientId:'c777m-'+ONL.token, connectTimeout:3500, reconnectPeriod:2000, keepalive:30, clean:true,
+            will:{ topic:topicMeta(ONL.code), payload:'', qos:1, retain:true } });
+        }catch(e){ clearTimeout(timer); step(); return; }
+        client.on('connect', function(){
+          if(settled) return; settled=true; clearTimeout(timer);
+          ONL.metaClient = client;
+          try{ client.publish(topicMeta(ONL.code), JSON.stringify({ version:BUILD_VERSION, hostName:ONL.myName, createdAt:Date.now(), transport:'supabase' }), { qos:1, retain:true }); }catch(e){}
+        });
+        client.on('error', function(){});
+      }
+      step();
+    }
+    function hostClearCrossMeta(){
+      var c = ONL.metaClient; ONL.metaClient=null;
+      if(!c) return;
+      try{ c.publish(topicMeta(ONL.code), '', { qos:1, retain:true }, function(){ try{ c.end(true); }catch(e){} }); setTimeout(function(){ try{ c.end(true); }catch(e){} }, 600); }
+      catch(e){ try{ c.end(true); }catch(e2){} }
+    }
     /* Feed nhận qua mạng là dữ liệu KHÔNG tin cậy (client của người khác có thể bị sửa):
        escape toàn bộ, chỉ khôi phục đúng thẻ <b> mà host trung thực dùng để in đậm. */
     function sanitizeFeedHTML(html){
@@ -2225,7 +2344,7 @@
       };
     }
     function hostPublishMeta(){
-      mqPublish(topicMeta(ONL.code), { version:BUILD_VERSION, hostName:ONL.myName, createdAt:Date.now() }, { retain:true });
+      mqPublish(topicMeta(ONL.code), { version:BUILD_VERSION, hostName:ONL.myName, createdAt:Date.now(), transport:'mqtt' }, { retain:true });
     }
     function hostStartSweep(){
       if(ONL.sweepTimer) clearInterval(ONL.sweepTimer);
@@ -2240,14 +2359,57 @@
       }, 5000);
     }
     document.getElementById('btnCreateRoom').addEventListener('click', function(){
-      if(!mqttAvailable()){ onlStatus('⚠️ Không tải được thư viện kết nối (cần mạng). Kiểm tra kết nối rồi tải lại trang.'); showRetry(true); return; }
       destroyTransport(); showRetry(false);
       ONL.myName = myDisplayName(); ONL.isHost = true; ONL.code = genRoomCode(); ONL.lastAction='create'; ONL.joinedRoom=false; ONL.brokerOpen=false; ONL.token = genToken();
-      hostTryBroker(0);
+      hostTrySupabase();
     });
+    /* Chủ phòng: thử đường CHÍNH Supabase trước (~8 giây: nối + vào kênh lobby + track presence).
+       Không được -> rơi về MQTT như cũ. */
+    function hostTrySupabase(){
+      if(!sbAvailable()){ hostTryBroker(0); return; }
+      onlStatus('Đang tạo phòng… đang nối <b>đường truyền chính Supabase</b> (cổng 443)…');
+      var settled=false;
+      ONL.sbTimer = setTimeout(function(){
+        if(settled) return; settled=true;
+        sbTeardown();
+        onlStatus('Đường truyền chính chưa nối được — đang chuyển sang <b>đường dự phòng MQTT</b>…');
+        hostTryBroker(0);
+      }, SUPABASE_TIMEOUT_MS);
+      var sb;
+      try{ sb = sbCreateClient(); }catch(e){ clearTimeout(ONL.sbTimer); ONL.sbTimer=null; hostTryBroker(0); return; }
+      ONL.sb = sb;
+      var ch = sb.channel(sbLobbyName(ONL.code), { config:{ presence:{ key:ONL.token }, broadcast:{ self:false } } });
+      ONL.sbLobby = ch;
+      ch.on('broadcast', { event:'to-host' }, function(p){ hostHandleEnv(p.payload); });
+      ch.on('presence', { event:'leave' }, function(p){
+        if(!HOST || ONL.transport!=='supabase') return;
+        (p.leftPresences||[]).forEach(function(pr){ if(pr.presence_ref && pr.presence_ref!==ONL.token){} });
+        if(p.key && p.key!==ONL.token) hostOnDisconnect(p.key);
+      });
+      ch.subscribe(function(st){
+        if(st==='SUBSCRIBED'){
+          ch.track({ role:'host', v:BUILD_VERSION, name:ONL.myName }).then(function(){
+            if(settled) return; settled=true; clearJoinTimers();
+            ONL.transport='supabase'; ONL.brokerOpen=true; ONL.connOpen=true; noteBrokerOnline();
+            showRetry(false);
+            hostInitState(); showLobby(); broadcastLobby(); hostStartSweep();
+            hostCrossMetaPublish();
+            onlStatus(''); lobbyStatus('✅ Phòng đang ở <b>đường truyền chính Supabase</b> (cổng 443) — bạn bè bấm Vào phòng là game tự tìm thấy phòng ở đây.');
+          }).catch(function(){
+            if(settled) return; settled=true; clearJoinTimers(); sbTeardown(); hostTryBroker(0);
+          });
+        } else if((st==='CHANNEL_ERROR' || st==='TIMED_OUT' || st==='CLOSED') && !settled){
+          settled=true; clearJoinTimers(); sbTeardown();
+          onlStatus('Đường truyền chính chưa nối được — đang chuyển sang <b>đường dự phòng MQTT</b>…');
+          hostTryBroker(0);
+        }
+      });
+    }
     /* Chủ phòng: thử các broker theo thứ tự ưu tiên (443 trước), ~6 giây mỗi broker,
        dính vào broker đầu tiên nối được và tạo phòng ở đó. */
     function hostTryBroker(idx){
+      if(!mqttAvailable()){ failJoin('broker', ONL.code); return; }
+      ONL.transport='mqtt';
       if(idx >= BROKERS.length){ failJoin('broker', ONL.code); return; }
       var url = BROKERS[idx]; ONL.brokerIdx = idx; ONL.brokerUrl = url;
       onlStatus('Đang tạo phòng… đang thử máy chủ chuyển tiếp '+(idx+1)+'/'+BROKERS.length+' ('+esc(brokerLabel(url))+')');
@@ -2275,7 +2437,7 @@
         if(!opened){
           opened = true; showRetry(false);
           hostInitState(); showLobby(); hostPublishMeta(); broadcastLobby(); hostStartSweep();
-          onlStatus(''); lobbyStatus('Phòng đang ở máy chủ chuyển tiếp '+esc(brokerLabel(url))+' — bạn bè bấm Vào phòng, game sẽ tự dò thấy phòng ở đây.');
+          onlStatus(''); lobbyStatus('Phòng đang ở <b>đường dự phòng MQTT</b> — máy chủ chuyển tiếp '+esc(brokerLabel(url))+' — bạn bè bấm Vào phòng, game sẽ tự dò thấy phòng ở đây.');
         } else {
           /* Tự nối lại sau khi rớt mạng: đăng lại meta + lobby để phòng sống tiếp */
           hostPublishMeta(); if(HOST) broadcastLobby();
@@ -2291,24 +2453,105 @@
       client.on('error', function(){ /* mqtt.js tự reconnect trong lượt thử; mốc ~6 giây sẽ chuyển broker nếu mãi không nối được */ });
     }
     document.getElementById('btnJoinRoom').addEventListener('click', function(){
-      if(!mqttAvailable()){ onlStatus('⚠️ Không tải được thư viện kết nối (cần mạng). Kiểm tra kết nối rồi tải lại trang.'); showRetry(true); return; }
       var code = (document.getElementById('joinCode').value||'').trim().toUpperCase();
       if(code.length!==6){ onlStatus('⚠️ Mã phòng phải đúng 6 ký tự.'); showRetry(false); return; }
       destroyTransport(); showRetry(false);
       ONL.myName = myDisplayName(); ONL.isHost = false; ONL.code = code; ONL.lastCode = code; ONL.lastAction='join'; ONL.ready=false; ONL.brokerOpen=false; ONL.connOpen=false; ONL.joinedRoom=false; ONL.joinSent=false;
       ONL.token = genToken();
-      /* DÒ PHÒNG: lần lượt qua các broker — nối, subscribe meta, chờ retained meta tối đa ~3,2 giây/broker.
-         Thấy meta -> chốt broker đó và join tại đó. Hết danh sách: có nối được broker nào mà không thấy
-         phòng -> "không tìm thấy phòng"; không nối được broker nào -> "không nối được máy chủ chuyển tiếp". */
-      ONL.probing = true; ONL.probeIdx = 0; ONL.probeAnyConn = false;
-      guestProbeBroker(0, code);
+      /* Thử đường CHÍNH Supabase trước: vào kênh lobby, chờ presence thấy chủ phòng.
+         Không thấy -> kiểm tra chéo meta MQTT trước khi kết luận (chống lệch đường truyền). */
+      guestTrySupabase(code);
     });
+    /* Khách: đường CHÍNH Supabase — presence của chủ phòng = phòng có thật + bắt tay phiên bản. */
+    function guestTrySupabase(code){
+      if(!sbAvailable()){ guestSupabaseFallback(code); return; }
+      onlStatus('Đang tìm phòng '+esc(code)+'… đang dò <b>đường truyền chính Supabase</b> (cổng 443)…');
+      var settled=false, hostSeen=false;
+      var sb;
+      try{ sb = sbCreateClient(); }catch(e){ guestSupabaseFallback(code); return; }
+      ONL.sb = sb;
+      ONL.hostConn = { open:false, send:function(m){ transportSendToHost(m); } };
+      var priv = sb.channel(sbPrivName(code, ONL.token), { config:{ broadcast:{ self:false } } });
+      ONL.sbPrivCh = priv;
+      priv.on('broadcast', { event:'msg' }, function(p){ guestOnData(p.payload); });
+      priv.subscribe();
+      var ch = sb.channel(sbLobbyName(code), { config:{ presence:{ key:ONL.token }, broadcast:{ self:false } } });
+      ONL.sbLobby = ch;
+      ch.on('broadcast', { event:'lobby' }, function(p){ if(ONL.joinedRoom) guestOnData(p.payload); });
+      function sbHostFromPresence(){
+        var st = ch.presenceState(); if(!st) return null;
+        for(var k in st){ var arr=st[k]||[]; for(var i=0;i<arr.length;i++){ if(arr[i] && arr[i].role==='host') return { key:k, meta:arr[i] }; } }
+        return null;
+      }
+      ch.on('presence', { event:'sync' }, function(){
+        var h = sbHostFromPresence();
+        if(h && !hostSeen){
+          hostSeen=true; ONL.hostKey=h.key;
+          if(h.meta && h.meta.v && h.meta.v!==BUILD_VERSION){ ONL.probing=false; failJoin('version', code); destroyTransport(); return; }
+          if(settled) return; settled=true; clearJoinTimers();
+          ONL.transport='supabase'; ONL.brokerOpen=true; ONL.connOpen=true; ONL.hostConn.open=true; noteBrokerOnline();
+          onlStatus('Tìm thấy phòng '+esc(code)+' ở <b>đường truyền chính Supabase</b> — đang vào phòng…');
+          transportSendToHost({ type:'join', name:ONL.myName, token:ONL.token, version:BUILD_VERSION });
+          ONL.joinSent=true;
+          startHeartbeat();
+          ONL.joinTimer = setTimeout(function(){
+            if(ONL.joinedRoom || ONL.transport!=='supabase') return;
+            /* Thấy presence mà chủ phòng không chào: kiểm tra chéo trước khi kết luận */
+            guestSupabaseFallback(code);
+          }, WELCOME_TIMEOUT_MS);
+        }
+        if(!h && ONL.joinedRoom && ONL.transport==='supabase' && !ONL.sbHostGone){
+          /* Chủ phòng biến mất khỏi presence = chủ phòng đã thoát / đóng phòng */
+          ONL.sbHostGone=true;
+          guestDisconnected('Chủ phòng đã đóng phòng hoặc mất kết nối.');
+        }
+      });
+      ch.subscribe(function(st){
+        if(st==='SUBSCRIBED'){
+          try{ ch.track({ role:'guest', name:ONL.myName }); }catch(e){}
+          if(ONL.joinSent && !ONL.probing){
+            /* Nối lại sau khi rớt: gửi lại join bằng token cũ, chủ phòng nhận lại đúng ghế */
+            transportSendToHost({ type:'join', name:ONL.myName, token: ONL.token, version:BUILD_VERSION });
+            startHeartbeat();
+          }
+        } else if((st==='CHANNEL_ERROR' || st==='TIMED_OUT') && !settled && !hostSeen){
+          settled=true; clearJoinTimers(); guestSupabaseFallback(code);
+        }
+      });
+      ONL.sbTimer = setTimeout(function(){
+        if(settled || hostSeen) return; settled=true;
+        guestSupabaseFallback(code);
+      }, SUPABASE_TIMEOUT_MS);
+    }
+    /* Supabase không thấy chủ phòng: kiểm tra chéo meta MQTT.
+       Phòng ở MQTT -> tự chuyển driver MQTT vào phòng. Phòng ở Supabase (meta ghi rõ) mà presence
+       không thấy -> coi như không tìm thấy. Không meta -> theo tình trạng nối được broker hay không. */
+    function guestSupabaseFallback(code){
+      if(ONL.hbTimer){ clearInterval(ONL.hbTimer); ONL.hbTimer=null; }
+      sbTeardown();
+      ONL.transport=null; ONL.brokerOpen=false; ONL.connOpen=false; ONL.joinSent=false;
+      if(ONL.hostConn) ONL.hostConn.open=false;
+      onlStatus('Đang tìm phòng '+esc(code)+'… đường chính chưa thấy phòng, đang kiểm tra chéo đường dự phòng…');
+      guestCrossCheckMqtt(code, function(meta, anyConn){
+        if(ONL.code!==code || ONL.isHost) return;
+        if(meta && meta.version && meta.version!==BUILD_VERSION){ failJoin('version', code); return; }
+        if(meta && meta.transport==='mqtt'){
+          ONL.probing=true; ONL.probeIdx=0; ONL.probeAnyConn=false;
+          guestProbeBroker(0, code);
+          return;
+        }
+        if(meta && meta.transport==='supabase'){ failJoin('notfound', code); return; }
+        failJoin(anyConn ? 'notfound' : 'broker', code);
+      });
+    }
     function guestTeardownClient(client){
       try{ if(client){ client.removeAllListeners(); client.end(true); } }catch(e){}
       if(ONL.client===client) ONL.client = null;
     }
     function guestProbeBroker(idx, code){
       if(!ONL.probing) return;
+      if(!mqttAvailable()){ ONL.probing=false; failJoin('broker', code); return; }
+      ONL.transport='mqtt';
       if(idx >= BROKERS.length){ ONL.probing=false; failJoin(ONL.probeAnyConn ? 'notfound' : 'broker', code); return; }
       ONL.probeIdx = idx;
       var url = BROKERS[idx]; ONL.brokerIdx = idx; ONL.brokerUrl = url;
@@ -2357,16 +2600,19 @@
       if(!payload || payload.length===0){ if(ONL.probeDone) ONL.probeDone(); return; } /* meta rỗng = không có phòng ở broker này */
       var meta = mqParse(payload); if(!meta){ if(ONL.probeDone) ONL.probeDone(); return; }
       if(meta.version && meta.version !== BUILD_VERSION){ ONL.probing=false; failJoin('version', code); destroyTransport(); return; }
+      if(meta.transport==='supabase'){
+        /* Phòng đang ở đường truyền CHÍNH nhưng máy này không nối được Supabase: báo rõ, không báo sai "không tìm thấy phòng" */
+        ONL.probing=false; guestTeardownClient(client); failJoin('supabase', code); showRetry(true); return;
+      }
       /* Chốt broker: huỷ mốc dò, chuyển client sang chế độ vào phòng */
       if(ONL.probeTimer){ clearTimeout(ONL.probeTimer); ONL.probeTimer=null; }
       ONL.probeDone = null; ONL.probing = false;
       ONL.brokerOpen = true; ONL.connOpen = true; if(ONL.hostConn) ONL.hostConn.open = true;
       try{ client.subscribe([topicTo(code, ONL.token), topicLobby(code)], { qos:1 }); }catch(e){}
-      mqPublish(topicToHost(code), { token: ONL.token, msg: { type:'join', name: ONL.myName, token: ONL.token, version: BUILD_VERSION } });
+      transportSendToHost({ type:'join', name: ONL.myName, token: ONL.token, version: BUILD_VERSION });
       ONL.joinSent = true;
       onlStatus('Tìm thấy phòng '+esc(code)+' ở '+esc(brokerLabel(ONL.brokerUrl))+' — đang vào phòng…');
-      if(ONL.hbTimer) clearInterval(ONL.hbTimer);
-      ONL.hbTimer = setInterval(function(){ mqPublish(topicToHost(ONL.code), { token: ONL.token, msg: { type:'ping' } }); }, 8000);
+      startHeartbeat();
       /* Chủ phòng không chào trong WELCOME_TIMEOUT_MS (phòng vừa đóng?) -> dò tiếp các broker còn lại */
       var resumeIdx = ONL.probeIdx + 1;
       ONL.joinTimer = setTimeout(function(){
@@ -2381,9 +2627,8 @@
         if(ONL.probing || ONL.isHost) return;
         ONL.brokerOpen = true; ONL.connOpen = true; if(ONL.hostConn) ONL.hostConn.open = true; noteBrokerOnline();
         try{ client.subscribe([topicTo(code, ONL.token), topicLobby(code), topicMeta(code)], { qos:1 }); }catch(e){}
-        mqPublish(topicToHost(code), { token: ONL.token, msg: { type:'join', name: ONL.myName, token: ONL.token, version: BUILD_VERSION } });
-        if(ONL.hbTimer) clearInterval(ONL.hbTimer);
-        ONL.hbTimer = setInterval(function(){ mqPublish(topicToHost(ONL.code), { token: ONL.token, msg: { type:'ping' } }); }, 8000);
+        transportSendToHost({ type:'join', name: ONL.myName, token: ONL.token, version: BUILD_VERSION });
+        startHeartbeat();
       });
     }
     function guestOnMessage(topic, payload){
@@ -2415,16 +2660,22 @@
     });
     function leaveRoom(){
       clearNetTimers();
-      var c = ONL.client;
       try{
-        if(c){
-          if(ONL.isHost){ mqPublish(topicMeta(ONL.code), '', { retain:true }); }
-          else { mqPublish(topicToHost(ONL.code), { token: ONL.token, msg: { type:'bye' } }); }
-          c.end(false);
+        if(ONL.transport==='supabase'){
+          if(ONL.isHost){ hostClearCrossMeta(); /* presence leave tự báo khách: chủ phòng đã thoát */ }
+          else { transportSendToHost({ type:'bye' }); }
+          setTimeout(function(){ sbTeardown(); }, 150);
+        } else {
+          var c = ONL.client;
+          if(c){
+            if(ONL.isHost){ mqPublish(topicMeta(ONL.code), '', { retain:true }); }
+            else { mqPublish(topicToHost(ONL.code), { token: ONL.token, msg: { type:'bye' } }); }
+            c.end(false);
+          }
+          ONL.client = null;
         }
       }catch(e){}
-      ONL.client = null;
-      setTimeout(function(){ location.reload(); }, 300);
+      setTimeout(function(){ location.reload(); }, 350);
     }
     document.getElementById('btnLeaveLobby').addEventListener('click', leaveRoom);
     document.getElementById('btnLeaveGame').addEventListener('click', leaveRoom);
@@ -2487,14 +2738,21 @@
     /* ---------- HOST: kết nối khách (tin nhắn qua topic to-host) ---------- */
     function hostConnFor(token){
       if(!HOST.conns[token]){
-        HOST.conns[token] = { peer: token, open: true, send: function(m){ mqPublish(topicTo(ONL.code, token), m); } };
+        HOST.conns[token] = { peer: token, open: true, send: function(m){
+          if(ONL.transport==='supabase') sbSendPriv(token, m);
+          else mqPublish(topicTo(ONL.code, token), m);
+        } };
       }
       HOST.conns[token].open = true;
       return HOST.conns[token];
     }
     function hostOnMessage(payload){
       if(!HOST) return;
-      var env = mqParse(payload); if(!env || !env.msg || !env.token) return;
+      hostHandleEnv(mqParse(payload));
+    }
+    function hostHandleEnv(env){
+      if(!HOST) return;
+      if(!env || !env.msg || !env.token) return;
       var token = String(env.token), msg = env.msg;
       if(!msg.type) return;
       HOST.lastSeen[token] = Date.now();
@@ -2574,8 +2832,8 @@
       var btn=document.getElementById('btnStartOnline');
       btn.disabled = !(HOST.players.length>=2 && allReady);
       btn.textContent = HOST.players.length<2 ? 'CẦN ÍT NHẤT 2 NGƯỜI' : (allReady ? 'BẮT ĐẦU VÁN' : 'ĐANG CHỜ MỌI NGƯỜI SẴN SÀNG…');
-      /* Trạng thái lobby không chứa bí mật: phát lên topic lobby cho mọi khách đang chờ/đang ở trong phòng */
-      mqPublish(topicLobby(ONL.code), { type:'lobby', players:list, config:HOST.config });
+      /* Trạng thái lobby không chứa bí mật: phát lên kênh lobby cho mọi khách đang chờ/đang ở trong phòng */
+      transportSendLobby({ type:'lobby', players:list, config:HOST.config });
     }
     function hostSendTo(canIdx, msg){
       var p = HOST.players[canIdx]; if(!p) return;
