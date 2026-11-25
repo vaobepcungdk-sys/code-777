@@ -761,11 +761,16 @@
       for(var i=0;i<r.length;i++) for(var j=i+1;j<r.length;j++) if(r[i].n===r[j].n && r[i].c===r[j].c) return true;
       return false;
     }
-    function hasRun3(r){
+    function hasRun3(r, k){
+      k = k || 3;
       var u=[], seen={};
       r.forEach(function(t){ if(!seen[t.n]){ seen[t.n]=1; u.push(t.n); } });
       u.sort(function(a,b){return a-b;});
-      for(var i=0;i+2<u.length;i++) if(u[i+1]===u[i]+1 && u[i+2]===u[i]+2) return true;
+      for(var i=0;i+k-1<u.length;i++){
+        var ok=true;
+        for(var d=1; d<k; d++) if(u[i+d]!==u[i]+d){ ok=false; break; }
+        if(ok) return true;
+      }
       return false;
     }
     function colorCounts(racks){
@@ -778,10 +783,10 @@
 
     /* Câu hỏi: text(rs) sinh chữ theo cỡ rack; ev(racks, rs) -> số (count) hoặc -1/0/1 (cmp) */
     var QUESTIONS = [
-      { id:1, type:'count', text:function(rs){ return 'Có bao nhiêu rack có tổng 3 số ≥ '+(rs===4?24:18)+'?'; },
-        ev:function(racks,rs){ var th=rs===4?24:18; return cntRacks(racks,function(r){ return rackSum(r)>=th; }); } },
-      { id:2, type:'count', text:function(rs){ return 'Có bao nhiêu rack có tổng 3 số ≤ '+(rs===4?16:12)+'?'; },
-        ev:function(racks,rs){ var th=rs===4?16:12; return cntRacks(racks,function(r){ return rackSum(r)<=th; }); } },
+      { id:1, type:'count', text:function(rs){ return 'Có bao nhiêu rack có tổng '+rs+' số ≥ '+(rs===4?23:18)+'?'; },
+        ev:function(racks,rs){ var th=rs===4?23:18; return cntRacks(racks,function(r){ return rackSum(r)>=th; }); } },
+      { id:2, type:'count', text:function(rs){ return 'Có bao nhiêu rack có tổng '+rs+' số ≤ '+(rs===4?17:12)+'?'; },
+        ev:function(racks,rs){ var th=rs===4?17:12; return cntRacks(racks,function(r){ return rackSum(r)<=th; }); } },
       { id:3, type:'count', text:function(){ return 'Có bao nhiêu rack có cùng 1 số nhưng khác màu?'; },
         ev:function(racks){ return cntRacks(racks,hasPairDiffColor); } },
       { id:4, type:'count', text:function(rs){ return 'Có bao nhiêu rack có cả '+rs+' màu khác nhau?'; },
@@ -790,8 +795,8 @@
         ev:function(racks){ return cntRacks(racks,function(r){ var e=r[0].n%2; return r.every(function(t){ return t.n%2===e; }); }); } },
       { id:6, type:'count', text:function(){ return 'Có bao nhiêu rack có ít nhất 2 thẻ giống hệt nhau (cùng số + cùng màu)?'; },
         ev:function(racks){ return cntRacks(racks,hasIdentical); } },
-      { id:7, type:'count', text:function(){ return 'Có bao nhiêu rack có 3 số liên tiếp nhau?'; },
-        ev:function(racks){ return cntRacks(racks,hasRun3); } },
+      { id:7, type:'count', text:function(rs){ return 'Có bao nhiêu rack có '+rs+' số liên tiếp nhau?'; },
+        ev:function(racks,rs){ return cntRacks(racks,function(r){ return hasRun3(r, rs); }); } },
       { id:8, type:'count', text:function(){ return 'Bạn nhìn thấy bao nhiêu màu tất cả?'; },
         ev:function(racks){ return Object.keys(colorCounts(racks)).length; } },
       { id:9, type:'count', text:function(){ return 'Có bao nhiêu màu xuất hiện ít nhất 3 lần?'; },
@@ -816,8 +821,8 @@
       /* ---- Expansion 1: câu 24–35 ---- */
       { id:24, type:'count', text:function(rs){ return 'Có bao nhiêu rack có tổng nằm trong khoảng '+(rs===4?'18–23':'13–17')+'?'; },
         ev:function(racks,rs){ var lo=rs===4?18:13, hi=rs===4?23:17; return cntRacks(racks,function(r){ var s=rackSum(r); return s>=lo&&s<=hi; }); } },
-      { id:25, type:'count', text:function(){ return 'Có bao nhiêu rack có hiệu số lớn nhất − nhỏ nhất ≥ 4?'; },
-        ev:function(racks){ return cntRacks(racks,function(r){ var ns=r.map(function(t){return t.n;}); return Math.max.apply(null,ns)-Math.min.apply(null,ns)>=4; }); } },
+      { id:25, type:'count', text:function(rs){ return 'Có bao nhiêu rack có hiệu số lớn nhất − nhỏ nhất ≥ '+(rs===4?5:4)+'?'; },
+        ev:function(racks,rs){ var th=rs===4?5:4; return cntRacks(racks,function(r){ var ns=r.map(function(t){return t.n;}); return Math.max.apply(null,ns)-Math.min.apply(null,ns)>=th; }); } },
       { id:26, type:'count', text:function(){ return 'Có bao nhiêu rack không có số 6 và số 7 nào?'; },
         ev:function(racks){ return cntRacks(racks,function(r){ return r.every(function(t){ return t.n!==6&&t.n!==7; }); }); } },
       { id:27, type:'count', text:function(){ return 'Có bao nhiêu màu xuất hiện đúng 1 lần trong các thẻ bạn thấy?'; },
