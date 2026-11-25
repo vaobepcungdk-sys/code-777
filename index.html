@@ -199,6 +199,31 @@
       .qcard .qwho{ margin-top:6px; font-size:13px; color:var(--ink-soft); font-weight:600; }
       .qcard .qans{ margin-top:12px; font-size:17px; font-weight:900; color:var(--red-dark); }
       @media (prefers-color-scheme: dark){ .qcard .qans{ color:#ff9d94; } }
+      /* ---------- CHỌN 1 TRONG 3 CÂU HỎI ---------- */
+      .qcard.wide{ width:min(900px, 100%); }
+      .qoffer{ display:grid; grid-template-columns:1fr; gap:10px; margin-top:12px; }
+      @media (min-width:680px){ .qoffer{ grid-template-columns:repeat(3, 1fr); } }
+      .qpick-card{
+        display:flex; flex-direction:column; gap:9px; text-align:left; width:100%;
+        border:2px solid var(--panel-line); background:var(--paper); color:var(--ink);
+        border-radius:14px; padding:13px 14px; font-family:inherit;
+        box-shadow:0 4px 10px rgba(60,20,0,.14), inset 0 1px 0 #fff;
+      }
+      button.qpick-card{ cursor:pointer; }
+      button.qpick-card:hover, button.qpick-card:active{ border-color:var(--gold-lo); background:linear-gradient(180deg,#fffdf4,#fff3cf); }
+      @media (prefers-color-scheme: dark){ button.qpick-card:hover, button.qpick-card:active{ background:#3a2410; } }
+      .qpick-card .qp-head{ display:flex; align-items:center; gap:9px; }
+      .qp-num{
+        display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; flex:none;
+        border-radius:50%; background:linear-gradient(180deg, var(--rack-hi), var(--rack)); color:#fff; font-size:17px; font-weight:900;
+        box-shadow:0 3px 7px rgba(120,0,0,.4), inset 0 2px 2px rgba(255,255,255,.5);
+      }
+      .qp-num.big{ width:58px; height:58px; font-size:27px; }
+      .qp-kind{ font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); }
+      .qpick-card .qp-text{ font-size:16px; font-weight:700; line-height:1.5; }
+      .qpick-card .qp-foot{ margin-top:auto; font-size:12.5px; font-weight:800; color:var(--gold-lo); }
+      .qpick-card .qp-foot.wait{ color:var(--ink-soft); }
+      .qp-big-text{ font-size:21px; font-weight:800; line-height:1.5; text-align:center; margin-top:14px; }
       .ans-opts{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:14px; }
       .ans-opts button{
         border:2px solid var(--panel-line); background:var(--paper); color:var(--ink); font-weight:800; font-size:15px;
@@ -567,7 +592,7 @@
         <ul class="rules">
           <li>Mỗi người có 1 rack <b>3 thẻ số</b> (Master: 4 thẻ) trước mặt — <b>bạn không thấy mã của mình, nhưng thấy mã của tất cả người khác</b>.</li>
           <li>Bộ 28 thẻ: số nào có đúng bấy nhiêu thẻ (1→1 thẻ, 2→2, …, 7→7), mỗi thẻ có số + màu + ký hiệu riêng.</li>
-          <li>Đến lượt, rút 1 thẻ câu hỏi, đọc to và <b>tự trả lời trung thực chỉ dựa trên các rack mình nhìn thấy</b> (không tính rack của mình). Câu trả lời cho thông tin cho mọi người — trừ chính người trả lời.</li>
+          <li>Đến lượt, bạn được bày <b>3 thẻ câu hỏi</b> (2 câu chưa chọn của lượt trước + 1 câu mới rút): chạm vào 1 quân bài để đọc kỹ cả câu rồi chọn 1 câu và <b>tự trả lời trung thực chỉ dựa trên các rack mình nhìn thấy</b> (không tính rack của mình). 2 câu chưa chọn <b>ở lại cho người chơi tiếp theo</b>. Mỗi câu hỏi chỉ xuất hiện đúng 1 lần — rút hết cả bộ mới xáo lại từ đầu. Câu trả lời cho thông tin cho mọi người — trừ chính người trả lời.</li>
           <li>Bất cứ lúc nào cũng tuyên bố được mã của mình (nút <b>Tuyên bố mã</b>). Đúng: <b>+1 điểm</b> và được xem mã. Sai: 0 điểm và không được xem. <b>Dù đúng hay sai đều thay 3 thẻ mới.</b></li>
           <li>Đạt <b>3 điểm</b> trước là thắng (Master: 2 điểm). Khi chồng thẻ số chỉ còn đúng 1 thẻ mà cần thay thẻ, toàn bộ thẻ đã loại được xáo lại thành chồng mới.</li>
           <li>Bàn luôn có đủ 4 rack: thiếu người thì thêm rack trống ai cũng nhìn thấy.</li>
@@ -699,6 +724,21 @@
           <div id="msgTiles" class="reveal-tiles"></div>
           <div class="sub-msg" id="msgText"></div>
           <div class="modal-btns"><button class="btn-claim grow" id="btnMsgOk" style="padding:13px;">ĐÃ HIỂU</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ QUESTION PICK POPUP ============ -->
+    <div class="overlay hidden" id="qpickOverlay" style="z-index:70;">
+      <div class="popup" style="width:min(520px,100%);" role="dialog" aria-modal="true" aria-label="Đọc kỹ câu hỏi trước khi chọn">
+        <div class="body" style="padding-top:22px;">
+          <div style="text-align:center;"><span class="qp-num big" id="qpNum">?</span></div>
+          <div class="qp-big-text" id="qpText"></div>
+          <div class="sub-msg" id="qpNote"></div>
+          <div class="modal-btns">
+            <button class="btn-small grow" id="btnQpBack" style="padding:12px;">← XEM LẠI 3 CÂU</button>
+            <button class="btn-claim grow" id="btnQpChoose" style="padding:13px;">✓ CHỌN CÂU NÀY</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1023,7 +1063,7 @@
       S = {
         master:cfg.master, expert:cfg.expert, diff:cfg.diff, noteMode:cfg.noteMode,
         players:players, deck:tiles, discard:[],
-        qdeck:shuffle(qids.slice()), qdiscard:[], qpool:qids,
+        qdeck:shuffle(qids.slice()), qdiscard:[], qpool:qids, qoffer:[],
         online:false, isHost:false, myCanIdx:0,
         turnIdx:0, turnNo:1, phase:'boot', currentQ:null, currentAnswer:null,
         segLogs:[], logs:[], entryNotes:{}, generalNote:'', lastSnapshot:null, dummyRotate:0,
@@ -1109,9 +1149,55 @@
       var feed=$('feed'); feed.prepend(d);
       while(feed.children.length>4) feed.removeChild(feed.lastChild);
     }
+    /* 3 quân bài lựa chọn: mỗi câu là 1 lá bài hiện ĐỦ chữ câu hỏi cỡ dễ đọc ngay trên
+       mặt bài (không phải đoán từ số hiệu); chạm vào 1 lá mở popup hiện cả câu to rõ
+       để đọc kỹ rồi mới chốt chọn. mine=false = đang xem người khác chọn (chỉ đọc). */
+    function offerCardsHTML(mine){
+      var who = S.players[S.turnIdx];
+      var h = '<div class="qk">Thẻ câu hỏi — chọn 1 trong 3</div>'
+        + '<div class="qtext" style="font-size:17px;">'+(mine ? 'Tới lượt bạn — chọn 1 câu để trả lời' : esc(who.name)+' đang chọn 1 trong 3 câu hỏi…')+'</div>'
+        + '<div class="qoffer">';
+      S.qoffer.forEach(function(qid){
+        var q = QBYID[qid]; if(!q) return;
+        var inner = '<span class="qp-head"><span class="qp-num">'+q.id+'</span><span class="qp-kind">'+(q.type==='count' ? 'Câu đếm số lượng' : 'Câu so sánh hơn / kém')+'</span></span>'
+          + '<span class="qp-text">'+esc(q.text(rs()))+'</span>'
+          + '<span class="qp-foot'+(mine?'':' wait')+'">'+(mine ? '👆 Chạm để đọc kỹ &amp; chọn câu này' : 'Đang chờ được chọn')+'</span>';
+        if(mine) h += '<button class="qpick-card" data-qpick="'+qid+'">'+inner+'</button>';
+        else h += '<div class="qpick-card">'+inner+'</div>';
+      });
+      h += '</div><div class="claim-note">2 câu không được chọn sẽ <b>ở lại cho người chơi tiếp theo</b>, cộng thêm 1 câu mới rút từ chồng — đừng để dành câu dễ cho đối thủ. Mỗi câu chỉ xuất hiện 1 lần, rút hết cả bộ mới xáo lại.</div>';
+      return h;
+    }
+    function wireOfferCards(qc){
+      qc.querySelectorAll('[data-qpick]').forEach(function(b){
+        b.addEventListener('click', function(){ openQPick(+b.dataset.qpick); });
+      });
+    }
+    /* Popup đọc kỹ 1 câu trước khi chốt: hiện số hiệu + toàn bộ câu hỏi chữ to */
+    var pendingPick = null;
+    function openQPick(qid){
+      var q = QBYID[qid]; if(!q) return;
+      pendingPick = qid;
+      $('qpNum').textContent = q.id;
+      $('qpText').textContent = q.text(rs());
+      $('qpNote').textContent = 'Chọn câu này là bạn sẽ trả lời nó — chỉ dựa trên các rack bạn nhìn thấy, không tính rack của mình. 2 câu còn lại ở lại cho người chơi tiếp theo.';
+      $('qpickOverlay').classList.remove('hidden');
+      if(window.SFX) SFX.play('popupOpen');
+    }
+    function closeQPick(){
+      pendingPick = null;
+      $('qpickOverlay').classList.add('hidden');
+      if(window.SFX) SFX.play('popupClose');
+    }
     function renderQCard(){
       var qc=$('qcard'), q=S.currentQ;
-      if(!q){ qc.innerHTML='<div class="qk">Code 777</div><div class="qtext">Đang chia thẻ…</div>'; return; }
+      var showingOffer = !q && S.qoffer && S.qoffer.length && (S.phase==='chooseQ' || S.phase==='aiThink' || S.phase==='waitChoose');
+      qc.classList.toggle('wide', !!showingOffer);
+      if(!q){
+        if(showingOffer && S.phase==='chooseQ'){ qc.innerHTML = offerCardsHTML(true); wireOfferCards(qc); return; }
+        if(showingOffer){ qc.innerHTML = offerCardsHTML(false); return; }
+        qc.innerHTML='<div class="qk">Code 777</div><div class="qtext">Đang chia thẻ…</div>'; return;
+      }
       var who = S.players[S.turnIdx];
       var h='<div class="qk">Thẻ câu hỏi</div><div><span class="qnum">'+q.id+'</span></div>'
           + '<div class="qtext">'+esc(q.text(rs()))+'</div>'
@@ -1139,10 +1225,52 @@
     }
 
     /* ---------- Luồng lượt chơi ---------- */
-    function drawQuestion(){
+    /* ---------- BỐC CÂU HỎI: RÚT KHÔNG HOÀN LẠI + CHỌN 1 TRONG 3 ----------
+       Mỗi câu chỉ xuất hiện đúng 1 lần trong cả ván: rút từ qdeck (đã xáo, không trùng),
+       câu đã trả lời nằm ở qdiscard, 2 câu chưa chọn nằm ở qoffer chờ người sau — không
+       đường nào đưa 1 câu quay lại khi nó đang ở 1 trong 3 chỗ đó. Chỉ khi qdeck cạn
+       mới xáo qdiscard thành chồng mới (lúc đó qoffer vẫn giữ nguyên 2 câu đang chờ,
+       và 2 câu đó không nằm trong qdiscard nên không thể bị rút trùng). */
+    function drawQuestionId(){
       if(S.qdeck.length===0){ S.qdeck = shuffle(S.qdiscard); S.qdiscard=[]; }
-      var qid = S.qdeck.pop();
-      return QBYID[qid];
+      return S.qdeck.pop();
+    }
+    /* Bày đủ 3 câu cho người sắp chơi: giữ nguyên các câu chưa chọn của lượt trước,
+       chỉ rút thêm cho đủ 3 (lượt đầu rút cả 3). */
+    function topUpOffer(){
+      if(!S.qoffer) S.qoffer = [];
+      while(S.qoffer.length<3){
+        var id = drawQuestionId();
+        if(id===undefined || id===null) break;
+        S.qoffer.push(id);
+      }
+    }
+    /* Người chơi chốt 1 câu trong 3 câu đang bày: câu đó rời qoffer để trả lời,
+       2 câu còn lại ở nguyên trong qoffer cho người tiếp theo. */
+    function chooseQuestion(qid){
+      if(!S || S.phase!=='chooseQ') return;
+      var i = S.qoffer.indexOf(qid); if(i<0) return;
+      S.qoffer.splice(i,1);
+      S.currentQ = QBYID[qid];
+      S.phase = 'humanAnswer';
+      var p = S.players[S.turnIdx];
+      p.status = 'tới lượt bạn — hãy trả lời';
+      if(window.SFX) SFX.play('draw');
+      renderAll();
+    }
+    /* Máy chọn 1 trong 3 câu đang bày (ngẫu nhiên trong 3 câu) rồi trả lời như cũ */
+    function aiChooseAndAnswer(){
+      var p = S.players[S.turnIdx];
+      if(!S.qoffer || !S.qoffer.length){ startTurn(); return; }
+      var pick = S.qoffer[Math.floor(Math.random()*S.qoffer.length)];
+      var i = S.qoffer.indexOf(pick); if(i>=0) S.qoffer.splice(i,1);
+      S.currentQ = QBYID[pick];
+      p.status = 'đang nhìn các rack…';
+      renderAll();
+      later(function(){
+        var v = evalForViewer(S.currentQ, racksAll(), S.turnIdx, rs());
+        doAnswer(S.turnIdx, v);
+      }, 850);
     }
     function startTurn(){
       if(S.gameOver) return;
@@ -1150,24 +1278,18 @@
       var p = S.players[S.turnIdx];
       if(p.kind==='human' && window.SFX) SFX.play('turn');
       S.currentAnswer = null; S.humanAnswered = false;
-      S.currentQ = drawQuestion();
+      S.currentQ = null;
+      topUpOffer();
       S.players.forEach(function(x){ x.status=''; });
-      p.status = 'đang rút câu hỏi…';
-      renderAll();
       if(p.kind==='human'){
-        S.phase='humanAnswer';
-        p.status='tới lượt bạn — hãy trả lời';
+        S.phase='chooseQ';
+        p.status='tới lượt bạn — chọn 1 trong 3 câu hỏi';
         renderAll();
       } else {
         S.phase='aiThink';
-        later(function(){
-          p.status='đang nhìn các rack…';
-          renderOpps(); renderDeckInfo();
-          later(function(){
-            var v = evalForViewer(S.currentQ, racksAll(), S.turnIdx, rs());
-            doAnswer(S.turnIdx, v);
-          }, 850);
-        }, 800);
+        p.status='đang chọn 1 trong 3 câu hỏi…';
+        renderAll();
+        later(aiChooseAndAnswer, 1100);
       }
     }
     function humanAnswer(v, btn){
@@ -1350,7 +1472,8 @@
     }
     function startTurnResume(){ /* tiếp tục lượt máy bị tạm dừng khi mở tuyên bố */
       var p = S.players[S.turnIdx];
-      if(p.kind==='human'){ S.phase='humanAnswer'; renderAll(); return; }
+      if(p.kind==='human'){ S.phase = S.currentQ ? 'humanAnswer' : 'chooseQ'; renderAll(); return; }
+      if(!S.currentQ){ aiChooseAndAnswer(); return; } /* máy bị dừng ngay lúc đang chọn câu: chọn tiếp rồi trả lời */
       later(function(){
         var v = evalForViewer(S.currentQ, racksAll(), S.turnIdx, rs());
         doAnswer(S.turnIdx, v);
@@ -1447,7 +1570,7 @@
     function afterHumanGuess(){
       if(S.gameOver) return;
       if(S.phase==='claim'){ later(claimPhase, 700); }
-      else if(S.turnIdx===0 && !S.humanAnswered && S.phase==='humanAnswer'){ renderAll(); }
+      else if(S.turnIdx===0 && !S.humanAnswered && (S.phase==='humanAnswer' || S.phase==='chooseQ')){ renderAll(); }
       else if(S.turnIdx!==0){ later(startTurnResume, 500); }
     }
     function showMsg(title, prefix, tiles, text){
@@ -1457,6 +1580,16 @@
       $('msgOverlay').classList.remove('hidden');
     }
     $('btnMsgOk').addEventListener('click', function(){ $('msgOverlay').classList.add('hidden'); });
+    /* Popup đọc câu hỏi: "Xem lại 3 câu" chỉ đóng popup; "Chọn câu này" mới chốt lựa chọn */
+    $('btnQpBack').addEventListener('click', closeQPick);
+    $('qpickOverlay').addEventListener('click', function(e){ if(e.target===this) closeQPick(); });
+    $('btnQpChoose').addEventListener('click', function(){
+      var qid = pendingPick; pendingPick = null;
+      $('qpickOverlay').classList.add('hidden');
+      if(qid===null || qid===undefined || !S) return;
+      if(S.online){ onlineSubmitChoice(qid); return; }
+      chooseQuestion(qid);
+    });
 
     /* ---------- NOTE POPUP ---------- */
     $('fabNote').addEventListener('click', openNote);
@@ -2411,7 +2544,7 @@
       HOST = {
         code: ONL.code, conns:{}, lastSeen:{}, players:[{ peerId:'HOST', name:ONL.myName, kind:'human', score:0, rack:[], codeNo:1, ready:true, connected:true, knownDiscarded:[] }],
         config: readLobbyCfg(), started:false, gameOver:false,
-        deck:[], discard:[], qdeck:[], qdiscard:[], qpool:[], turnIdx:0, turnNo:1,
+        deck:[], discard:[], qdeck:[], qdiscard:[], qpool:[], qoffer:[], turnIdx:0, turnNo:1,
         currentQ:null, currentAnswer:null, phase:'lobby', segLogs:[], logs:[], lastSnapshot:null, dummyRotate:0, claimTimer:null
       };
     }
@@ -2869,6 +3002,11 @@
       else if(msg.type==='ready'){
         var pl = hostPlayerByPeer(token); if(pl){ pl.ready = !!msg.ready; broadcastLobby(); }
       }
+      else if(msg.type==='choose'){
+        var qi = hostIndexByPeer(token);
+        var qid = parseInt(msg.qid, 10);
+        if(qi>=0 && isFinite(qid)) hostChooseQuestion(qi, qid);
+      }
       else if(msg.type==='answer'){
         var idx = hostIndexByPeer(token);
         var av = (typeof msg.value==='number' && isFinite(msg.value)) ? Math.round(msg.value) : NaN;
@@ -2938,35 +3076,68 @@
       HOST.deck = tiles; HOST.discard=[];
       var qids;
       if(c.qset==='goc') qids = range(1,23); else if(c.qset==='morong') qids = range(1,35); else qids = shuffle(range(1,35)).slice(0,23);
-      HOST.qpool=qids; HOST.qdeck=shuffle(qids.slice()); HOST.qdiscard=[];
+      HOST.qpool=qids; HOST.qdeck=shuffle(qids.slice()); HOST.qdiscard=[]; HOST.qoffer=[];
       HOST.turnIdx=0; HOST.turnNo=1; HOST.segLogs=[]; HOST.logs=[]; HOST.lastSnapshot=null; HOST.dummyRotate=0; HOST.started=true; HOST.gameOver=false;
       HOST.players.forEach(function(p,i){ if(p.kind==='human' && p.connected) hostSendTo(i, { type:'gameStart', config:c }); });
       enterOnlineGameUI(c, true);
       hostFeedAll('Ván online bắt đầu — phòng '+HOST.code+', mỗi rack '+size+' thẻ. Chúc suy luận vui!', true);
       setTimeout(hostStartTurn, 800);
     }
-    function hostDrawQuestion(){
+    /* Bốc câu hỏi online — cùng luật với offline: rút không hoàn lại (mỗi câu 1 lần,
+       hết chồng mới xáo phần đã trả lời), bày 3 câu gồm 2 câu chưa chọn của lượt trước
+       + rút thêm cho đủ 3. Host là người duy nhất giữ qoffer thật và phát id qua view. */
+    function hostDrawQuestionId(){
       if(HOST.qdeck.length===0){ HOST.qdeck = shuffle(HOST.qdiscard); HOST.qdiscard=[]; }
-      return QBYID[HOST.qdeck.pop()];
+      return HOST.qdeck.pop();
+    }
+    function hostTopUpOffer(){
+      if(!HOST.qoffer) HOST.qoffer = [];
+      while(HOST.qoffer.length<3){
+        var id = hostDrawQuestionId();
+        if(id===undefined || id===null) break;
+        HOST.qoffer.push(id);
+      }
+    }
+    /* Chốt câu được chọn (người thật gửi lên, hoặc máy/mất kết nối tự chọn): chỉ chấp
+       nhận khi đúng lượt, đang ở pha chọn, và câu đó thật sự đang nằm trong qoffer. */
+    function hostChooseQuestion(canIdx, qid){
+      if(!HOST || HOST.gameOver || HOST.phase!=='choose' || HOST.turnIdx!==canIdx) return false;
+      var i = (HOST.qoffer||[]).indexOf(qid); if(i<0) return false;
+      HOST.qoffer.splice(i,1);
+      HOST.currentQ = QBYID[qid];
+      HOST.phase='answer';
+      HOST.players[canIdx].status='đang trả lời…';
+      hostBroadcastViews();
+      return true;
+    }
+    /* Máy (hoặc ghế người mất kết nối) tự chơi trọn lượt: chọn 1 trong 3 câu rồi trả lời */
+    function hostAutoPlayTurn(){
+      if(!HOST || HOST.gameOver) return;
+      if(HOST.phase==='choose'){
+        var pick = HOST.qoffer[Math.floor(Math.random()*HOST.qoffer.length)];
+        if(!hostChooseQuestion(HOST.turnIdx, pick)) return;
+        setTimeout(function(){
+          if(HOST && !HOST.gameOver && HOST.phase==='answer')
+            hostDoAnswer(HOST.turnIdx, evalForViewer(HOST.currentQ, HOST.players.map(function(x){return x.rack;}), HOST.turnIdx, hostRs()));
+        }, 1000);
+      } else if(HOST.phase==='answer'){
+        hostDoAnswer(HOST.turnIdx, evalForViewer(HOST.currentQ, HOST.players.map(function(x){return x.rack;}), HOST.turnIdx, hostRs()));
+      }
     }
     function hostStartTurn(){
       if(!HOST || HOST.gameOver) return;
-      HOST.currentAnswer=null; HOST.currentQ = hostDrawQuestion(); HOST.phase='answer';
+      HOST.currentAnswer=null; HOST.currentQ=null; hostTopUpOffer(); HOST.phase='choose';
       HOST.players.forEach(function(p){ p.status=''; });
-      HOST.players[HOST.turnIdx].status='đang trả lời…';
+      HOST.players[HOST.turnIdx].status='đang chọn 1 trong 3 câu hỏi…';
       hostBroadcastViews();
       if(window.SFX) SFX.play('draw');
       var p = HOST.players[HOST.turnIdx];
       if(p.kind==='ai'){
-        setTimeout(function(){
-          if(!HOST || HOST.gameOver) return;
-          var v = evalForViewer(HOST.currentQ, HOST.players.map(function(x){return x.rack;}), HOST.turnIdx, hostRs());
-          hostDoAnswer(HOST.turnIdx, v);
-        }, 1400);
+        setTimeout(function(){ if(HOST && !HOST.gameOver && HOST.phase==='choose') hostAutoPlayTurn(); }, 1300);
       } else if(!p.connected){
-        setTimeout(function(){ if(HOST && !HOST.gameOver && HOST.phase==='answer') hostDoAnswer(HOST.turnIdx, evalForViewer(HOST.currentQ, HOST.players.map(function(x){return x.rack;}), HOST.turnIdx, hostRs())); }, 1200);
+        setTimeout(function(){ if(HOST && !HOST.gameOver && HOST.phase==='choose') hostAutoPlayTurn(); }, 1200);
       }
-      /* người thật (host hoặc khách): chờ họ bấm trả lời trên máy của họ */
+      /* người thật (host hoặc khách): chờ họ chọn 1 trong 3 câu trên máy của họ */
     }
     function hostDoAnswer(canIdx, v){
       var q = HOST.currentQ;
@@ -3079,7 +3250,7 @@
         var rack;
         if(ri===0){ rack = []; for(var s=0;s<size;s++) rack.push({ id:-1, n:0, c:'green' }); }
         else rack = p.rack.map(function(t){ return { id:t.id, n:t.n, c:t.c }; });
-        return { name:p.name, kind:p.kind, score:p.score, rack:rack, codeNo:p.codeNo, status:(HOST.phase==='answer' && (forCanIdx+ri)%N===HOST.turnIdx)?'đang trả lời…':'' };
+        return { name:p.name, kind:p.kind, score:p.score, rack:rack, codeNo:p.codeNo, status:((HOST.phase==='answer' || HOST.phase==='choose') && (forCanIdx+ri)%N===HOST.turnIdx) ? (HOST.phase==='choose' ? 'đang chọn câu hỏi…' : 'đang trả lời…') : '' };
       });
       var logs = HOST.logs.map(function(e){
         var snap = [];
@@ -3096,9 +3267,10 @@
       for(i=0;i<HOST.deck.length;i++) deckArr.push({});
       for(i=0;i<HOST.qdeck.length;i++) qArr.push({});
       return {
-        players:players, deck:deckArr, qdeck:qArr,
+        players:players, deck:deckArr, qdeck:qArr, qoffer:(HOST.qoffer||[]).slice(),
         turnIdx:(HOST.turnIdx-forCanIdx+N)%N, turnNo:HOST.turnNo,
-        phase: HOST.phase==='answer' ? (forCanIdx===HOST.turnIdx ? 'humanAnswer' : 'aiThink') : HOST.phase,
+        phase: HOST.phase==='choose' ? (forCanIdx===HOST.turnIdx ? 'chooseQ' : 'waitChoose')
+             : (HOST.phase==='answer' ? (forCanIdx===HOST.turnIdx ? 'humanAnswer' : 'aiThink') : HOST.phase),
         currentQ: HOST.currentQ ? { id:HOST.currentQ.id } : null,
         currentAnswer: HOST.currentAnswer, logs:logs, gameOver:HOST.gameOver, myCodeNo: rot[0].codeNo
       };
@@ -3120,12 +3292,12 @@
       if(!HOST) return;
       HOST.players.forEach(function(p){ if(p.kind==='human' && !p.connected){ p.kind='ai'; p.name = p.name+' (máy thay)'; p.knownDiscarded=[]; hostFeedAll('🤖 Máy đã thay ghế của người chơi mất kết nối.', false); } });
       hostBroadcastViews();
-      if(HOST.phase==='answer' && HOST.players[HOST.turnIdx].kind==='ai') hostStartTurnRefresh();
+      if((HOST.phase==='answer' || HOST.phase==='choose') && HOST.players[HOST.turnIdx].kind==='ai') hostStartTurnRefresh();
     });
     function hostStartTurnRefresh(){
       var p = HOST.players[HOST.turnIdx];
-      if(p && p.kind==='ai' && HOST.phase==='answer'){
-        setTimeout(function(){ if(HOST && !HOST.gameOver && HOST.phase==='answer') hostDoAnswer(HOST.turnIdx, evalForViewer(HOST.currentQ, HOST.players.map(function(x){return x.rack;}), HOST.turnIdx, hostRs())); }, 900);
+      if(p && p.kind==='ai' && (HOST.phase==='answer' || HOST.phase==='choose')){
+        setTimeout(function(){ if(HOST && !HOST.gameOver) hostAutoPlayTurn(); }, 900);
       }
     }
 
@@ -3174,7 +3346,7 @@
       var size = c.master?4:3;
       S = {
         master:c.master, expert:c.expert, diff:c.botDiff, noteMode:c.noteMode,
-        players:[], deck:[], discard:[], qdeck:[], qdiscard:[], qpool:[],
+        players:[], deck:[], discard:[], qdeck:[], qdiscard:[], qpool:[], qoffer:[],
         turnIdx:0, turnNo:1, phase:'boot', currentQ:null, currentAnswer:null,
         segLogs:[], logs:[], entryNotes:{}, generalNote:'', lastSnapshot:null, dummyRotate:0,
         notePages:[], notePageView:0, noteTab:'board', hypWhich:'A',
@@ -3196,6 +3368,7 @@
       S.players = view.players; S.deck = view.deck; S.qdeck = view.qdeck;
       S.turnIdx = view.turnIdx; S.turnNo = view.turnNo; S.phase = view.phase;
       S.currentQ = qObj; S.currentAnswer = view.currentAnswer;
+      S.qoffer = view.qoffer || [];
       S.logs = view.logs; S.gameOver = view.gameOver; S.myCodeNo = view.myCodeNo;
       S.lastSnapshot = view.logs.length ? view.logs[view.logs.length-1].snapshot : null;
       if(!S.notePages.length){ newNotePage(true); }
@@ -3204,11 +3377,16 @@
         newNotePage(false);
       }
       if(view.logs.length > prevLogs && document.getElementById('noteOverlay').classList.contains('hidden')){ S.noteNew = true; }
-      if(view.phase==='humanAnswer' && window.SFX) SFX.play('turn');
+      if(view.phase==='humanAnswer' || view.phase==='chooseQ'){ if(window.SFX) SFX.play('turn'); }
       renderAll();
       var ob = document.getElementById('obStatus');
       if(ob) ob.textContent = (ONL.isHost?'Chủ phòng · ':'') + 'Lượt '+view.turnNo+' · '+view.players.length+' ghế · '+(view.gameOver?'Ván đã kết thúc':'Đang chơi');
       updateBotReplaceBtn();
+    }
+    function onlineSubmitChoice(qid){
+      if(ONL.isHost && HOST){ hostChooseQuestion(HOST.turnIdx, qid); return; }
+      if(ONL.hostConn && ONL.hostConn.open) ONL.hostConn.send({ type:'choose', qid:qid });
+      else feedAdd('⚠️ Mất kết nối tới chủ phòng, chưa gửi được lựa chọn câu hỏi.', false);
     }
     function onlineSubmitAnswer(v){
       if(ONL.isHost && HOST){ hostDoAnswer(HOST.turnIdx, v); return; }
