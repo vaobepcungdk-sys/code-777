@@ -261,6 +261,9 @@
       .btn-small.on{ border-color:var(--gold-lo); background:linear-gradient(180deg,#fff6da,#ffe9a8); color:#4a2c00; }
       @media (prefers-color-scheme: dark){ .btn-small.on{ color:#ffe9a8; background:#4a380e; } }
       .btn-small.red{ background:linear-gradient(180deg, var(--rack-hi), var(--rack)); color:#fff; border-color:var(--rack-lo); }
+      /* Nút Bảng loại trừ GHIM ở header popup (cạnh nút Mã #1/#2): bấm là mở bảng + cuộn tới ngay */
+      #btnPinBoard{ border-color:var(--gold-lo); font-weight:900; }
+      #btnPinBoard .cnt{ background:var(--gold); color:#4a2c00; border-radius:99px; padding:1px 8px; font-size:12px; font-weight:900; margin-left:2px; white-space:nowrap; }
       .mini-strip{
         padding:9px 16px; border-bottom:1px dashed var(--panel-line); font-size:12.5px; line-height:1.9;
         display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center;
@@ -620,6 +623,7 @@
         <header>
           <span class="ttl">📝 Note suy luận</span>
           <span id="pageBtns" style="display:flex; gap:6px; flex-wrap:wrap;"></span>
+          <button class="btn-small" id="btnPinBoard" title="Hiện Bảng loại trừ ngay">📌 Bảng loại trừ <span class="cnt" id="pinBoardCount"></span></button>
           <button class="btn-small" id="btnOpenSummary">📋 Ghi chú tổng</button>
           <button class="btn-small red" id="btnCloseNote">✕ Đóng</button>
         </header>
@@ -1504,6 +1508,7 @@
           var arr = b.querySelector('.arr'); if(arr) arr.textContent = open ? '▾' : '▸';
         });
       });
+      var pbtn = $('btnPinBoard'); if(pbtn) pbtn.classList.toggle('on', !!S.noteSec.board);
     }
     document.querySelectorAll('[data-sectoggle]').forEach(function(b){
       b.addEventListener('click', function(){
@@ -1515,6 +1520,25 @@
         applyNoteSections();
         if(S.noteSec[key]) renderNoteBody(); /* vừa mở ra: nạp nội dung mới nhất của phần đó */
       });
+    });
+    /* ---------- NÚT GHIM "BẢNG LOẠI TRỪ" Ở HEADER POPUP ----------
+       Ghim ngay cạnh các nút Mã #1/#2 để khỏi phải cuộn tìm trong thân popup:
+       bấm 1 cái là bảng mở ra (nếu đang thu gọn) và thân popup cuộn thẳng tới
+       đầu bảng. Bảng đang mở sẵn thì bấm cũng chỉ cuộn tới, không đóng lại. */
+    $('btnPinBoard').addEventListener('click', function(){
+      if(!S) return;
+      if(!S.noteSec) S.noteSec = { strip:true, board:true, journal:false, hyp:false, foot:true };
+      var wasOpen = !!S.noteSec.board;
+      S.noteSec.board = true;
+      if(window.SFX) SFX.play('click');
+      applyNoteSections();
+      if(!wasOpen) renderNoteBody(); /* vừa mở ra: nạp nội dung mới nhất của bảng */
+      var head = document.querySelector('[data-sectoggle="board"]'), nb = $('noteBody');
+      if(head && nb){
+        var target = nb.scrollTop + head.getBoundingClientRect().top - nb.getBoundingClientRect().top - 4;
+        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        nb.scrollTo({ top: Math.max(0, target), behavior: reduce ? 'auto' : 'smooth' });
+      }
     });
     function openNote(){
       if(!S) return;
@@ -1786,6 +1810,7 @@
       $('noteRemain').innerHTML = 'Còn '+remainingCount()+' / 28 khả năng<small>'+perNum.slice(0,-3)+'</small>';
       /* gợi ý trên tiêu đề các phần thu gọn: nhìn khi phần đang đóng vẫn biết bên trong có gì */
       var bh = $('boardHeadHint'); if(bh) bh.textContent = 'còn '+remainingCount()+'/28 khả năng';
+      var pc = $('pinBoardCount'); if(pc) pc.textContent = 'còn '+remainingCount()+'/28';
       var jh = $('journalHeadHint'); if(jh) jh.textContent = S.logs.length ? S.logs.length+' câu đã trả lời' : 'chưa có câu nào';
       var fh = $('footHeadCount'); if(fh) fh.textContent = 'còn '+remainingCount()+'/28 khả năng';
       renderGuess();
@@ -1899,6 +1924,7 @@
       }
       var nr = $('noteRemain'); if(nr) nr.innerHTML = 'Còn '+remainingCount()+' / 28 khả năng<small>'+perNum.slice(0,-3)+'</small>';
       var bh = $('boardHeadHint'); if(bh) bh.textContent = 'còn '+remainingCount()+'/28 khả năng';
+      var pc = $('pinBoardCount'); if(pc) pc.textContent = 'còn '+remainingCount()+'/28';
       var fh = $('footHeadCount'); if(fh) fh.textContent = 'còn '+remainingCount()+'/28 khả năng';
       var br = $('secBoard') ? $('secBoard').querySelector('.remain') : null;
       if(br) br.textContent = 'Còn '+remainingCount()+' / 28 khả năng chưa bị loại';
