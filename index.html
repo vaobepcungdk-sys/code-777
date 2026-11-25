@@ -300,6 +300,9 @@
       .board-actions .btn-small:disabled{ opacity:.45; cursor:default; }
       .legend{ font-size:12.5px; color:var(--ink-soft); font-weight:600; line-height:1.6; margin-top:10px; }
       /* Journal */
+      /* Bộ lọc nhật ký: ẩn câu mình trả lời, chỉ xem câu của đối thủ để loại trừ */
+      .jfilter{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:2px 0 4px; }
+      .jfilter .jf-note{ font-size:12.5px; font-weight:700; color:var(--ink-soft); line-height:1.45; }
       .jseg{ font-weight:900; font-size:14px; margin:16px 0 6px; color:var(--red-dark); }
       @media (prefers-color-scheme: dark){ .jseg{ color:#ff9d94; } }
       .jitem{ border:1px solid var(--panel-line); border-radius:12px; padding:10px 12px; margin-top:8px; background:var(--paper); }
@@ -1017,6 +1020,7 @@
         segLogs:[], logs:[], entryNotes:{}, generalNote:'', lastSnapshot:null, dummyRotate:0,
         notePages:[], notePageView:0, noteTab:'board', hypWhich:'A',
         noteSec:{ strip:true, board:true, journal:false, hyp:false, foot:true }, sumCode:0,
+        journalHideMine:false,
         guessDraft:[], guessSel:0, noteNew:false, gameOver:false, humanAnswered:false
       };
       for(var g=0; g<size; g++) S.guessDraft.push({ n:null, c:null });
@@ -1951,11 +1955,35 @@
     }
     function renderJournal(){
       if(!S.logs.length){ $('secJournal').innerHTML = '<p class="legend">Chưa có câu trả lời nào. Nhật ký sẽ tự ghi: lượt, người trả lời, câu hỏi, đáp án — kèm ảnh chụp toàn bàn (snapshot) tại đúng thời điểm đó theo góc nhìn của bạn.</p>'; return; }
-      var h='', lastSeg = null;
+      /* LỌC "ẨN CÂU TRẢ LỜI CỦA MÌNH": câu do chính người chơi trả lời (answererIdx===0 —
+         cả ván offline lẫn view online đã xoay để mình luôn là index 0) không cho thêm
+         thông tin gì về mã của mình (người trả lời không tính rack của chính họ), nên ẩn
+         đi chỉ còn câu đối thủ trả lời cho dễ loại trừ. Chỉ ẩn hiển thị: dữ liệu nhật ký,
+         ghi chú và ghim của các câu bị ẩn giữ nguyên trong state, hiện lại là đủ nguyên. */
+      var hideMine = !!S.journalHideMine;
+      var mineCount = 0;
+      S.logs.forEach(function(e){ if(e.answererIdx===0) mineCount++; });
+      var oppCount = S.logs.length - mineCount;
+      var jh0 = $('journalHeadHint');
+      if(jh0) jh0.textContent = hideMine ? ('đang ẩn câu của bạn · còn '+oppCount+' câu đối thủ') : (S.logs.length+' câu đã trả lời');
+      var h = '<div class="jfilter">'
+        + '<button class="btn-small'+(hideMine?' on':'')+'" id="btnJournalHideMine" aria-pressed="'+(hideMine?'true':'false')+'">🙈 '+(hideMine?'Đang ẩn câu của mình':'Ẩn câu trả lời của mình')+'</button>'
+        + '<span class="jf-note">'+(hideMine
+            ? ('Chỉ hiện '+oppCount+' câu đối thủ trả lời · đã ẩn '+mineCount+' câu của bạn')
+            : ('Đang hiện tất cả '+S.logs.length+' câu · trong đó '+mineCount+' câu do bạn trả lời'))+'</span></div>';
+      var visibleLogs = hideMine ? S.logs.filter(function(e){ return e.answererIdx!==0; }) : S.logs;
+      if(!visibleLogs.length){
+        h += '<p class="legend">Mọi câu đã trả lời tới giờ đều do bạn trả lời nên đang bị ẩn hết. Bấm nút <b>Đang ẩn câu của mình</b> ở trên để hiện lại tất cả.</p>';
+        $('secJournal').innerHTML = h;
+        wireJournalFilterBtn();
+        return;
+      }
+      var lastSeg = null;
       /* MỚI NHẤT LÊN TRƯỚC: giai đoạn Mã mới nhất xếp trước; trong từng giai đoạn,
          lượt mới nhất ở trên, câu 1 nằm cuối cùng — mở nhật ký là thấy ngay câu
-         vừa trả lời. Snapshot + ô ghi chú + nút ghim đi theo đúng từng câu như cũ. */
-      S.logs.slice().reverse().forEach(function(e){
+         vừa trả lời. Snapshot + ô ghi chú + nút ghim đi theo đúng từng câu như cũ.
+         Khi đang lọc, tiêu đề giai đoạn Mã chỉ hiện ở giai đoạn còn câu đang hiện. */
+      visibleLogs.slice().reverse().forEach(function(e){
         if(e.codeNo!==lastSeg){ lastSeg = e.codeNo; h += '<div class="jseg">— Giai đoạn Mã #'+e.codeNo+' của bạn —</div>'; }
         var note = S.entryNotes[e.id] || { text:'', pinned:false };
         h += '<div class="jitem"><div class="jh">Lượt '+e.turn+' · <b>'+esc(e.answererName)+'</b> · Câu '+e.qid+': '+esc(e.qtext)+' → <span class="ans">“'+esc(e.answerText)+'”</span></div>'
@@ -1988,6 +2016,19 @@
           S.entryNotes[id].pinned = !S.entryNotes[id].pinned;
           b.classList.toggle('on', S.entryNotes[id].pinned);
         });
+      });
+      wireJournalFilterBtn();
+    }
+    /* Nút bật/tắt lọc nhật ký: lưu chữ ghi chú đang gõ dở TRƯỚC khi dựng lại (câu đang
+       gõ có thể sắp bị ẩn), rồi lật cờ S.journalHideMine và chỉ dựng lại phần Nhật ký —
+       không đụng vào Bảng loại trừ / Giả thuyết / các phần khác của popup. */
+    function wireJournalFilterBtn(){
+      var fb = $('btnJournalHideMine'); if(!fb) return;
+      fb.addEventListener('click', function(){
+        var cap = activeNoteCapture(); if(cap) commitNoteValue(cap.key, cap.value);
+        S.journalHideMine = !S.journalHideMine;
+        if(window.SFX) SFX.play('click');
+        renderJournal();
       });
     }
     </script>
@@ -3107,6 +3148,7 @@
         segLogs:[], logs:[], entryNotes:{}, generalNote:'', lastSnapshot:null, dummyRotate:0,
         notePages:[], notePageView:0, noteTab:'board', hypWhich:'A',
         noteSec:{ strip:true, board:true, journal:false, hyp:false, foot:true }, sumCode:0,
+        journalHideMine:false,
         guessDraft:[], guessSel:0, noteNew:false, gameOver:false, humanAnswered:false,
         online:true, isHost:ONL.isHost, myCanIdx:0, myCodeNo:1
       };
