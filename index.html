@@ -1154,8 +1154,9 @@
        để đọc kỹ rồi mới chốt chọn. mine=false = đang xem người khác chọn (chỉ đọc). */
     function offerCardsHTML(mine){
       var who = S.players[S.turnIdx];
-      var h = '<div class="qk">Thẻ câu hỏi — chọn 1 trong 3</div>'
-        + '<div class="qtext" style="font-size:17px;">'+(mine ? 'Tới lượt bạn — chọn 1 câu để trả lời' : esc(who.name)+' đang chọn 1 trong 3 câu hỏi…')+'</div>'
+      var nOff = S.qoffer.length;
+      var h = '<div class="qk">Thẻ câu hỏi — chọn 1 trong '+nOff+'</div>'
+        + '<div class="qtext" style="font-size:17px;">'+(mine ? 'Tới lượt bạn — chọn 1 câu để trả lời' : esc(who.name)+' đang chọn 1 trong '+nOff+' câu hỏi…')+'</div>'
         + '<div class="qoffer">';
       S.qoffer.forEach(function(qid){
         var q = QBYID[qid]; if(!q) return;
@@ -1165,7 +1166,11 @@
         if(mine) h += '<button class="qpick-card" data-qpick="'+qid+'">'+inner+'</button>';
         else h += '<div class="qpick-card">'+inner+'</div>';
       });
-      h += '</div><div class="claim-note">2 câu không được chọn sẽ <b>ở lại cho người chơi tiếp theo</b>, cộng thêm 1 câu mới rút từ chồng — đừng để dành câu dễ cho đối thủ. Mỗi câu chỉ xuất hiện 1 lần, rút hết cả bộ mới xáo lại.</div>';
+      if(nOff<3){
+        h += '</div><div class="claim-note">Vòng câu hỏi sắp hết: chỉ còn <b>'+nOff+' câu chưa từng được hỏi</b> trong bộ này nên bày bấy nhiêu. Hỏi hết cả bộ mới xáo lại từ đầu — không câu nào bị hỏi lại trước lúc đó.</div>';
+      } else {
+        h += '</div><div class="claim-note">2 câu không được chọn sẽ <b>ở lại cho người chơi tiếp theo</b>, cộng thêm 1 câu mới rút từ chồng — đừng để dành câu dễ cho đối thủ. Mỗi câu chỉ xuất hiện 1 lần, rút hết cả bộ mới xáo lại.</div>';
+      }
       return h;
     }
     function wireOfferCards(qc){
@@ -1226,13 +1231,15 @@
 
     /* ---------- Luồng lượt chơi ---------- */
     /* ---------- BỐC CÂU HỎI: RÚT KHÔNG HOÀN LẠI + CHỌN 1 TRONG 3 ----------
-       Mỗi câu chỉ xuất hiện đúng 1 lần trong cả ván: rút từ qdeck (đã xáo, không trùng),
-       câu đã trả lời nằm ở qdiscard, 2 câu chưa chọn nằm ở qoffer chờ người sau — không
-       đường nào đưa 1 câu quay lại khi nó đang ở 1 trong 3 chỗ đó. Chỉ khi qdeck cạn
-       mới xáo qdiscard thành chồng mới (lúc đó qoffer vẫn giữ nguyên 2 câu đang chờ,
-       và 2 câu đó không nằm trong qdiscard nên không thể bị rút trùng). */
+       Mỗi câu chỉ xuất hiện đúng 1 lần trong mỗi vòng: rút từ qdeck (đã xáo, không
+       trùng), câu đã trả lời nằm ở qdiscard, các câu chưa chọn nằm ở qoffer chờ người
+       sau — không đường nào đưa 1 câu quay lại khi nó đang ở 1 trong 3 chỗ đó.
+       TUYỆT ĐỐI không xáo lại giữa vòng: kể cả khi qdeck cạn mà vẫn còn câu chưa từng
+       được trả lời đang chờ trong qoffer, cứ bày nốt các câu đó (cuối vòng có thể chỉ
+       còn bày 2 rồi 1 câu). Chỉ khi MỌI câu trong bộ đã được trả lời hết mới tính là
+       hết vòng — lúc đó mới xáo lại toàn bộ (xem reset trong doAnswer). */
     function drawQuestionId(){
-      if(S.qdeck.length===0){ S.qdeck = shuffle(S.qdiscard); S.qdiscard=[]; }
+      if(S.qdeck.length===0) return null;
       return S.qdeck.pop();
     }
     /* Bày đủ 3 câu cho người sắp chơi: giữ nguyên các câu chưa chọn của lượt trước,
@@ -1283,11 +1290,11 @@
       S.players.forEach(function(x){ x.status=''; });
       if(p.kind==='human'){
         S.phase='chooseQ';
-        p.status='tới lượt bạn — chọn 1 trong 3 câu hỏi';
+        p.status='tới lượt bạn — chọn 1 trong '+S.qoffer.length+' câu hỏi';
         renderAll();
       } else {
         S.phase='aiThink';
-        p.status='đang chọn 1 trong 3 câu hỏi…';
+        p.status='đang chọn 1 trong '+S.qoffer.length+' câu hỏi…';
         renderAll();
         later(aiChooseAndAnswer, 1100);
       }
@@ -1315,6 +1322,15 @@
       if(playerIdx===0) S.humanAnswered = true;
       S.currentAnswer = v;
       S.qdiscard.push(q.id);
+      /* Hết vòng câu hỏi: mọi câu trong bộ đều đã được trả lời ít nhất 1 lần thì mới
+         xáo lại toàn bộ cho vòng mới. Tại thời điểm này qoffer chắc chắn rỗng (mọi
+         câu chưa trả lời đều nằm trong qoffer, mà giờ không còn câu nào như vậy)
+         nên chồng mới không thể trùng với câu đang bày nào. */
+      if(S.qpool.length && S.qdiscard.length>=S.qpool.length){
+        S.qdiscard = [];
+        S.qdeck = shuffle(S.qpool.slice());
+        feedAdd('🔀 Đã hỏi hết cả bộ câu hỏi — xáo lại toàn bộ cho vòng mới.', false);
+      }
       p.status = 'đã trả lời';
       /* snapshot + phát hiện rack thay đổi so với snapshot trước */
       var snap = snapshotNow();
@@ -3083,11 +3099,14 @@
       hostFeedAll('Ván online bắt đầu — phòng '+HOST.code+', mỗi rack '+size+' thẻ. Chúc suy luận vui!', true);
       setTimeout(hostStartTurn, 800);
     }
-    /* Bốc câu hỏi online — cùng luật với offline: rút không hoàn lại (mỗi câu 1 lần,
-       hết chồng mới xáo phần đã trả lời), bày 3 câu gồm 2 câu chưa chọn của lượt trước
-       + rút thêm cho đủ 3. Host là người duy nhất giữ qoffer thật và phát id qua view. */
+    /* Bốc câu hỏi online — cùng luật với offline: rút không hoàn lại (mỗi câu 1 lần
+       mỗi vòng, KHÔNG xáo lại giữa vòng kể cả khi chồng cạn — cuối vòng bày nốt các
+       câu chưa từng được hỏi còn chờ trong qoffer), bày 3 câu gồm 2 câu chưa chọn
+       của lượt trước + rút thêm cho đủ 3. Chỉ khi mọi câu trong bộ đã được trả lời
+       hết mới xáo lại toàn bộ (xem reset trong hostDoAnswer). Host là người duy
+       nhất giữ qoffer thật và phát id qua view. */
     function hostDrawQuestionId(){
-      if(HOST.qdeck.length===0){ HOST.qdeck = shuffle(HOST.qdiscard); HOST.qdiscard=[]; }
+      if(HOST.qdeck.length===0) return null;
       return HOST.qdeck.pop();
     }
     function hostTopUpOffer(){
@@ -3128,7 +3147,7 @@
       if(!HOST || HOST.gameOver) return;
       HOST.currentAnswer=null; HOST.currentQ=null; hostTopUpOffer(); HOST.phase='choose';
       HOST.players.forEach(function(p){ p.status=''; });
-      HOST.players[HOST.turnIdx].status='đang chọn 1 trong 3 câu hỏi…';
+      HOST.players[HOST.turnIdx].status='đang chọn 1 trong '+(HOST.qoffer||[]).length+' câu hỏi…';
       hostBroadcastViews();
       if(window.SFX) SFX.play('draw');
       var p = HOST.players[HOST.turnIdx];
@@ -3144,6 +3163,13 @@
       var correct = evalForViewer(q, HOST.players.map(function(x){return x.rack;}), canIdx, hostRs());
       if(v!==correct){ hostSendTo(canIdx, { type:'answerWrong' }); return; }
       HOST.currentAnswer = v; HOST.qdiscard.push(q.id);
+      /* Hết vòng câu hỏi: mọi câu trong bộ đã được trả lời hết mới xáo lại toàn bộ
+         (lúc này qoffer rỗng nên không thể trùng câu đang bày — xem bản offline). */
+      if(HOST.qpool.length && HOST.qdiscard.length>=HOST.qpool.length){
+        HOST.qdiscard = [];
+        HOST.qdeck = shuffle(HOST.qpool.slice());
+        hostFeedAll('🔀 Đã hỏi hết cả bộ câu hỏi — xáo lại toàn bộ cho vòng mới.', false);
+      }
       HOST.players[canIdx].status='đã trả lời';
       var snapCan = HOST.players.map(function(p){ return p.rack.map(function(t){ return { n:t.n, c:t.c }; }); });
       var changed = HOST.players.map(function(_, i){
