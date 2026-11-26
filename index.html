@@ -13,8 +13,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js" integrity="sha384-sLWJsCmP+Z4Qn+HgF7Hi64Djta4fZMu0fcgi3uUL3GFV/ubx2G86LPOuMf7+ZIyX" crossorigin="anonymous"></script>
     <style>
       button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
-      /* Chống zoom trên mobile: chạm 2 lần liên tục không phóng to, không delay chạm */
-      html, body, button, input, select, textarea, summary, [role="button"] { touch-action: manipulation; }
+      /* Chống zoom + kích đúp trên mobile: MỌI phần tử (kể cả div/span do game tự dựng)
+         đều manipulation — chạm 2 lần liên tục không phóng to ở bất cứ đâu, không delay
+         chạm. Trước đây chỉ phủ vài loại thẻ nên phần tử nào lọt ngoài danh sách vẫn bị
+         iOS Safari phóng to khi chạm đúp (iOS bỏ qua user-scalable=no trong meta).
+         Lớp .overlay khai báo touch-action:none riêng ở dưới (đặc hiệu cao hơn *) nên
+         nền popup vẫn khoá cuộn/zoom như cũ. */
+      *, *::before, *::after { touch-action: manipulation; }
       * { box-sizing: border-box; }
       :root{
         --red-deep:#6d060c; --red-mid:#c0161d; --red-dark:#8f0f16;
@@ -1355,8 +1360,7 @@
       var lb = qc.querySelector('#btnLieArm');
       if(lb) lb.addEventListener('click', function(){
         S.lieArm = !S.lieArm;
-        if(window.SFX) SFX.play('click');
-        renderQCard();
+        renderQCard(); /* tiếng click: bộ phát tiếng toàn cục lo — tự phát ở đây thành 2 tiếng chồng nhau */
       });
     }
     /* Khối điều khiển Nói Dối ngay dưới các nút đáp án (chỉ hiện ở lượt trả lời của
@@ -1823,6 +1827,43 @@
     document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
     document.addEventListener('gesturechange', function(e){ e.preventDefault(); });
     document.addEventListener('dblclick', function(e){ e.preventDefault(); }, { passive:false });
+    /* ---------- CHẶN KÍCH ĐÚP: 1 CÚ CHẠM = ĐÚNG 1 HÀNH ĐỘNG ----------
+       Trên điện thoại, 1 cú chạm thật đôi khi sinh thêm 1 "click ma" rơi đúng vị trí
+       ngón tay: popup vừa đóng ở sự kiện chạm-xuống thì click tổng hợp theo sau rơi
+       xuống nút nằm dưới popup; hoặc nút vừa bị dựng lại giữa cú chạm thì click rơi
+       vào nút mới cùng chỗ. Hệ quả người chơi thấy tận mắt: công tắc bật rồi tắt ngay
+       (Nói Dối / Chuyên gia / Sẵn sàng), nút Nói Dối gài rồi tự huỷ, tuyên bố mở 2
+       lần... Click ma luôn tới gần như tức thì (<120ms) và gần như trùng toạ độ với
+       cú chạm thật, trong khi thao tác thật thứ hai của người (kể cả chọn lại cùng 1
+       số trong bộ chọn mã) không thể nhanh và trùng chỗ đến vậy. Lớp gác này chạy ở
+       pha capture — trước MỌI handler của game và trước cả bộ phát tiếng click —
+       nuốt click nào trùng toạ độ trong cửa sổ cực ngắn đó:
+       - cùng 1 phần tử bị kích lại trong <250ms -> nuốt;
+       - phần tử khác (đã bị thay / nút dưới popup) cùng chỗ trong <120ms -> nuốt.
+       Miễn trừ: ô Bảng loại trừ (.ncell) — chạm nhanh liên tiếp cùng 1 ô để xoay
+       trạng thái là thao tác thật cốt lõi, và ô chỉ có đúng 1 handler click thường
+       nên không thể tự sinh click ma; ô nhập chữ / ô chọn (input, textarea, select)
+       cũng miễn trừ để không ảnh hưởng gõ phím và mở danh sách chọn. Click không
+       có toạ độ (bàn phím Enter, game tự .click() như nút Thử lại online) luôn qua. */
+    var lastTapClick = null;
+    document.addEventListener('click', function(e){
+      if(!e.isTrusted) return; /* click do game tự phát (nút Thử lại online .click()) luôn cho qua */
+      var x = e.clientX, y = e.clientY;
+      if(!x && !y) return; /* click không toạ độ (bàn phím Enter/Space) luôn cho qua */
+      var t = e.target;
+      if(t && t.closest && t.closest('input, textarea, select, .ncell')) return;
+      var now = performance.now();
+      var prev = lastTapClick;
+      if(prev){
+        var dt = now - prev.t, dx = x - prev.x, dy = y - prev.y;
+        if(dx*dx + dy*dy < 24*24 && ((t === prev.el && dt < 250) || (t !== prev.el && dt < 120))){
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return; /* giữ nguyên mốc cú chạm thật: click ma thứ 3 (nếu có) cũng bị nuốt */
+        }
+      }
+      lastTapClick = { x:x, y:y, t:now, el:t };
+    }, true);
     /* ---------- THU GỌN / MỞ RỘNG TỪNG PHẦN TRONG POPUP NOTE ----------
        5 phần đóng/mở độc lập: strip (dải bàn), board (Bảng loại trừ), journal (Nhật ký),
        hyp (Giả thuyết A/B), foot (khối Đoán & tuyên bố). Trạng thái nằm ở S.noteSec nên
@@ -1858,8 +1899,7 @@
         if(!S.noteSec) S.noteSec = { strip:true, board:true, journal:false, hyp:false, foot:true };
         var key = b.dataset.sectoggle;
         S.noteSec[key] = !S.noteSec[key];
-        if(window.SFX) SFX.play('click');
-        applyNoteSections();
+        applyNoteSections(); /* tiếng click: bộ phát tiếng toàn cục lo */
         if(S.noteSec[key]) renderNoteBody(); /* vừa mở ra: nạp nội dung mới nhất của phần đó */
       });
     });
@@ -1872,8 +1912,7 @@
       if(!S.noteSec) S.noteSec = { strip:true, board:true, journal:false, hyp:false, foot:true };
       var wasOpen = !!S.noteSec.board;
       S.noteSec.board = true;
-      if(window.SFX) SFX.play('click');
-      applyNoteSections();
+      applyNoteSections(); /* tiếng click: bộ phát tiếng toàn cục lo */
       if(!wasOpen) renderNoteBody(); /* vừa mở ra: nạp nội dung mới nhất của bảng */
       var head = document.querySelector('[data-sectoggle="board"]'), nb = $('noteBody');
       if(head && nb){
@@ -2075,8 +2114,7 @@
         b.addEventListener('click', function(){
           var cap = activeNoteCapture(); if(cap) commitNoteValue(cap.key, cap.value); /* lưu chữ đang gõ dở trước khi chuyển mã */
           S.sumCode = +b.dataset.sumcode;
-          if(window.SFX) SFX.play('click');
-          renderSummary();
+          renderSummary(); /* tiếng click: bộ phát tiếng toàn cục lo */
         });
       });
     }
@@ -2395,8 +2433,7 @@
       fb.addEventListener('click', function(){
         var cap = activeNoteCapture(); if(cap) commitNoteValue(cap.key, cap.value);
         S.journalHideMine = !S.journalHideMine;
-        if(window.SFX) SFX.play('click');
-        renderJournal();
+        renderJournal(); /* tiếng click: bộ phát tiếng toàn cục lo */
       });
     }
     </script>
