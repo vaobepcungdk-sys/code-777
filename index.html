@@ -470,6 +470,65 @@
         .popup{ max-height:94dvh; }
         .gslot{ width:64px; min-height:78px; }
       }
+
+      /* ---------- TUTORIAL ---------- */
+      .btn-tutorial{
+        width:100%; margin-top:12px; padding:14px; border-radius:14px; font-size:16px; font-weight:900;
+        border:2.5px solid var(--gold-lo); background:var(--paper); color:var(--ink);
+        box-shadow:0 4px 0 rgba(138,93,5,.55);
+      }
+      .btn-tutorial:active{ transform:translateY(2px); box-shadow:0 2px 0 rgba(138,93,5,.55); }
+      .btn-tutorial small{ display:block; font-weight:600; font-size:12.5px; color:var(--ink-soft); margin-top:2px; }
+      .tut-head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:6px; }
+      .tut-head .ttl{ color:#fff; font-weight:900; font-size:19px; text-shadow:0 2px 4px rgba(0,0,0,.55); margin-right:auto; }
+      .tut-prog{ height:10px; border-radius:99px; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.25); margin-top:10px; overflow:hidden; }
+      .tut-prog > div{ height:100%; background:linear-gradient(90deg, var(--gold-lo), var(--gold), var(--gold-hi)); transition:width .35s; }
+      .tut-step-lbl{ color:#ffeec2; font-weight:800; font-size:13px; margin-top:7px; text-shadow:0 1px 3px rgba(0,0,0,.6); }
+      .tut-card{
+        background:var(--panel); border:1px solid var(--panel-line); border-radius:18px;
+        box-shadow:var(--shadow); padding:18px 20px; margin-top:14px;
+      }
+      .tut-card h2{ font-size:19px; font-weight:900; line-height:1.35; }
+      .tut-txt{ font-size:15px; line-height:1.6; margin-top:8px; }
+      .tut-txt b{ color:var(--red-dark); }
+      @media (prefers-color-scheme: dark){ .tut-txt b{ color:#ff9d94; } }
+      .tut-board{ margin-top:6px; }
+      .tut-hint{
+        margin-top:12px; border:1.5px dashed var(--gold-lo); background:#fff6da; color:#4a2c00;
+        border-radius:12px; padding:10px 13px; font-size:14px; font-weight:700; line-height:1.5;
+      }
+      @media (prefers-color-scheme: dark){ .tut-hint{ background:#4a380e; color:#ffe9a8; } }
+      .tut-ok{
+        margin-top:12px; border:1.5px solid var(--good); background:rgba(29,157,85,.12); color:var(--ink);
+        border-radius:12px; padding:10px 13px; font-size:14.5px; font-weight:700; line-height:1.55;
+      }
+      .tut-err{
+        margin-top:12px; border:1.5px solid #d33; background:rgba(221,51,51,.1); color:var(--ink);
+        border-radius:12px; padding:10px 13px; font-size:14.5px; font-weight:700; line-height:1.55;
+      }
+      .tut-nav{ display:flex; gap:10px; align-items:center; margin-top:16px; flex-wrap:wrap; }
+      .tut-nav .btn-claim:disabled{ filter:grayscale(.6); opacity:.55; box-shadow:none; }
+      .tut-quiz{ display:flex; flex-direction:column; gap:9px; margin-top:12px; }
+      .tut-quiz button{
+        text-align:left; border:2px solid var(--panel-line); background:var(--paper); color:var(--ink);
+        border-radius:12px; padding:12px 14px; font-weight:700; font-size:15px; line-height:1.45; font-family:inherit; cursor:pointer;
+      }
+      .tut-quiz button:hover{ border-color:var(--gold-lo); }
+      .tut-quiz button.wrong{ border-color:#d33; background:#ffe3e0; animation:shake .3s; }
+      .tut-quiz button.right{ border-color:var(--good); background:rgba(29,157,85,.14); }
+      .tut-quiz button:disabled{ cursor:default; opacity:.85; }
+      .hl-pulse{ outline:3px solid var(--gold); outline-offset:3px; animation:pulse 1.1s infinite; border-radius:12px; }
+      .tut-cases{ display:grid; grid-template-columns:1fr; gap:10px; margin-top:12px; }
+      @media (min-width:680px){ .tut-cases{ grid-template-columns:1fr 1fr; } }
+      .tut-case{ border:1.5px solid var(--panel-line); border-radius:12px; padding:12px 14px; background:var(--paper); }
+      .tut-case h3{ font-size:15px; font-weight:900; margin-bottom:5px; }
+      .tut-case p{ font-size:13.5px; line-height:1.55; margin:0; color:var(--ink); }
+      .tut-dist{ display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
+      .tut-dist .dc{
+        display:inline-flex; align-items:center; gap:6px; border:1.5px solid var(--panel-line); border-radius:99px;
+        padding:5px 11px 5px 6px; font-weight:800; font-size:13.5px; background:var(--paper);
+      }
+      @media (prefers-reduced-motion: reduce){ .hl-pulse{ animation:none } .tut-quiz button.wrong{ animation:none } }
     </style>
   </head>
   <body>
@@ -532,6 +591,7 @@
         </div>
 
         <button class="btn-start" id="btnStart">BẮT ĐẦU CHƠI</button>
+        <button class="btn-tutorial" id="btnTutorial">🎓 HƯỚNG DẪN CHƠI — TUTORIAL<small>Chưa biết chơi? Học bằng 1 ván mẫu dẫn tay từng bước, khoảng 3 phút — không cần ai giảng luật.</small></button>
       </div>
 
       <div class="card" id="onlineCard">
@@ -630,6 +690,38 @@
           <button class="btn-claim" id="btnClaim">TUYÊN BỐ MÃ!</button>
         </div>
         <div class="claim-note" id="claimNote">Bạn tuyên bố được bất cứ lúc nào. Đúng +1 điểm, sai mất mã đang suy luận — cả hai đều đổi rack mới.</div>
+      </div>
+    </div>
+
+    <!-- ============ TUTORIAL ============ -->
+    <div class="wrap hidden" id="tutorialScreen">
+      <div class="tut-head">
+        <span class="ttl">🎓 Hướng dẫn chơi Code 777</span>
+        <button class="btn-ghost" id="btnExitTutorial">✕ Thoát hướng dẫn</button>
+      </div>
+      <div class="tut-prog"><div id="tutProgBar" style="width:0%"></div></div>
+      <div class="tut-step-lbl" id="tutStepLbl"></div>
+      <div id="tutBody"></div>
+      <div class="tut-nav">
+        <button class="btn-small" id="btnTutBack" style="padding:12px 16px;">← Quay lại</button>
+        <div style="flex:1"></div>
+        <span id="tutNavHint" style="color:#ffeec2; font-weight:700; font-size:13px; text-shadow:0 1px 3px rgba(0,0,0,.6);"></span>
+        <button class="btn-claim" id="btnTutNext" style="padding:13px 22px; font-size:16px;">TIẾP THEO →</button>
+      </div>
+    </div>
+
+    <!-- ============ TUTORIAL QUESTION POPUP ============ -->
+    <div class="overlay hidden" id="tutQPickOverlay" style="z-index:75;">
+      <div class="popup" style="width:min(520px,100%);" role="dialog" aria-modal="true" aria-label="Đọc kỹ câu hỏi trước khi chọn (bài hướng dẫn)">
+        <div class="body" style="padding-top:22px;">
+          <div style="text-align:center;"><span class="qp-num big" id="tutQpNum">?</span></div>
+          <div class="qp-big-text" id="tutQpText"></div>
+          <div class="sub-msg" id="tutQpNote"></div>
+          <div class="modal-btns">
+            <button class="btn-small grow" id="btnTutQpBack" style="padding:12px;">← XEM LẠI 3 CÂU</button>
+            <button class="btn-claim grow" id="btnTutQpChoose" style="padding:13px;">✓ CHỌN CÂU NÀY</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -3447,6 +3539,485 @@
       document.getElementById('winText').innerHTML = esc(msg.name)+' đạt '+msg.score+' điểm sau '+msg.turns+' lượt trong phòng '+esc(ONL.code)+'.';
       document.getElementById('winOverlay').classList.remove('hidden');
     }
+    </script>
+
+    <script>
+    /* ================= TUTORIAL — VÁN MẪU DẪN TAY =================
+       Chế độ học riêng, nằm ngoài các chế độ chơi: 1 ván cố định đã được kiểm chứng
+       bằng chính engine của game. Rack thật của "Bạn" là 5 đỏ – 6 hồng – 7 xanh dương;
+       3 câu trả lời của đối thủ (Lan câu 28 → 2, Hùng câu 7 → 1, Mai câu 33 → Bằng nhau)
+       lọc mọi tổ hợp còn lại xuống đúng bộ số 5-6-7. Tutorial dùng state riêng (TT),
+       không đụng vào state ván thật (S) nên học xong vào chơi không sót dữ liệu nào. */
+    var TT = null;
+    function tutById(id){ return TT.all[id]; }
+    function tutRack(ids){ return ids.map(tutById); }
+    function tutBoardHTML(opts){
+      opts = opts || {};
+      var scores = opts.scores || [0,0,0,0];
+      var names = ['Bạn','Lan','Hùng','Mai'];
+      var h = '<div class="scores">';
+      names.forEach(function(nm, i){
+        var coins = '';
+        for(var c=0;c<3;c++) coins += '<span class="coin'+(c<scores[i]?'':' off')+'"></span>';
+        h += '<div class="score-chip'+(i===0?' me':'')+'"><span class="coins">'+coins+'</span>'+nm+' — '+scores[i]+' điểm</div>';
+      });
+      h += '</div><div class="opps">';
+      for(var i=1;i<4;i++){
+        h += '<div class="player-block'+(opts.activeIdx===i?' active':'')+'"><div class="nameplate">'+names[i]+' — '+scores[i]+' điểm<span class="st">'+(opts.status && opts.status[i] ? esc(opts.status[i]) : '')+'</span></div>'
+           + rackHTML(TT.racks[i]) + '</div>';
+      }
+      h += '</div>';
+      h += '<div class="myzone"><div class="lbl">Rack của bạn — bạn không nhìn thấy, cả 3 đối thủ đều nhìn thấy</div><div class="myrack-row"><div class="rack black"'+(opts.pulseMine?' style="outline:3px solid var(--gold); outline-offset:3px;"':'')+'>';
+      if(opts.revealMine){
+        TT.racks[0].forEach(function(t){ h += '<div class="slot">'+tileHTML(t)+'</div>'; });
+      } else {
+        for(var s=0;s<3;s++) h += '<div class="slot"><div class="tile-back"><span>?</span></div></div>';
+      }
+      h += '</div></div></div>';
+      return h;
+    }
+    function tutQCardHTML(qid, whoName, answerVal){
+      var q = QBYID[qid];
+      var h = '<div class="qzone"><div class="qcard"><div class="qk">Thẻ câu hỏi</div><div><span class="qnum">'+q.id+'</span></div>'
+        + '<div class="qtext">'+esc(q.text(3))+'</div>'
+        + '<div class="qwho">'+esc(whoName)+' trả lời theo các rack mình nhìn thấy (không tính rack của chính mình)</div>';
+      if(answerVal!==null && answerVal!==undefined) h += '<div class="qans">'+esc(whoName)+' trả lời: “'+esc(answerText(q, answerVal))+'”</div>';
+      return h + '</div></div>';
+    }
+    function tutQuizHTML(qkey, options){
+      var h = '<div class="tut-quiz" data-quiz="'+qkey+'">';
+      options.forEach(function(o, i){ h += '<button data-qopt="'+i+'">'+esc(o)+'</button>'; });
+      return h + '</div><div id="tutQuizMsg"></div>';
+    }
+    function wireTutQuiz(qkey, correctIdx, okHTML, hintHTML){
+      var box = document.querySelector('[data-quiz="'+qkey+'"]'); if(!box) return;
+      box.querySelectorAll('[data-qopt]').forEach(function(b){
+        b.addEventListener('click', function(){
+          var msg = $('tutQuizMsg');
+          if(+b.dataset.qopt === correctIdx){
+            box.querySelectorAll('button').forEach(function(x){ x.disabled = true; });
+            b.classList.add('right');
+            if(msg) msg.innerHTML = '<div class="tut-ok">'+okHTML+'</div>';
+            TT.done[TT.step] = true;
+            if(window.SFX) SFX.play('good');
+            tutSyncNav();
+          } else {
+            b.classList.add('wrong');
+            if(window.SFX) SFX.play('bad');
+            setTimeout(function(){ b.classList.remove('wrong'); }, 350);
+            if(msg) msg.innerHTML = '<div class="tut-err">'+hintHTML+'</div>';
+          }
+        });
+      });
+    }
+    function tutPyramidHTML(){
+      var h = '';
+      for(var n=1;n<=7;n++){
+        h += '<div class="pyr-row"><span class="rn">'+n+'</span>';
+        TT.all.filter(function(t){ return t.n===n; }).forEach(function(t){
+          var st = TT.struck[t.id] ? 1 : 0;
+          h += '<span class="ncell st'+st+'" style="display:inline-block;">'+tileHTML(t,'sm')+'</span>';
+        });
+        var left = TT.all.filter(function(t){ return t.n===n && !TT.struck[t.id]; }).length;
+        h += '<span class="rc">còn '+left+' khả năng</span></div>';
+      }
+      return h;
+    }
+
+    var TUT_STEPS = [
+      { t:'Ý tưởng cốt lõi', req:false },
+      { t:'Bộ 28 thẻ', req:false },
+      { t:'Chọn 1 trong 3 câu hỏi', req:true },
+      { t:'Trả lời câu đếm', req:true },
+      { t:'Câu dư lăn sang người sau', req:false },
+      { t:'Đối thủ trả lời — manh mối 1', req:true },
+      { t:'Manh mối 2 — số liên tiếp', req:true },
+      { t:'Manh mối 3 — câu so sánh & “Bằng nhau”', req:true },
+      { t:'Mở Note & gạch loại trừ', req:true },
+      { t:'Nếu tuyên bố sai thì sao?', req:true },
+      { t:'Tuyên bố mã của bạn', req:true },
+      { t:'Thắng ván & các trường hợp còn lại', req:false }
+    ];
+    var TUT_RENDER = [
+      /* 1 — Ý tưởng cốt lõi */
+      function(){
+        return '<div class="tut-card"><h2>1. Ai cũng thấy mã của người khác — trừ mã của mình</h2>'
+          + '<p class="tut-txt">Đây là bàn của ván mẫu. Bạn nhìn thấy rõ rack của <b>Lan, Hùng và Mai</b>, nhưng rack của chính bạn (kệ đen ở dưới) chỉ là 3 mặt lưng dấu <b>?</b> — trong khi cả 3 đối thủ đều thấy rõ mã của bạn. Ngược lại, không ai tự thấy mã của mình.</p>'
+          + '<p class="tut-txt">Cách chơi: đến lượt, bạn <b>chọn 1 câu hỏi và tự trả lời</b> dựa trên các rack mình thấy. Câu trả lời của <b>đối thủ</b> mới là thứ cho bạn manh mối về mã của mình — vì khi trả lời, họ tính cả rack của bạn. Gom đủ manh mối, bạn <b>tuyên bố mã</b>: đúng 3 lần là thắng ván.</p></div>'
+          + '<div class="tut-board">'+tutBoardHTML({ pulseMine:true })+'</div>';
+      },
+      /* 2 — Bộ 28 thẻ */
+      function(){
+        var chips = '';
+        for(var n=1;n<=7;n++){
+          var rep = TT.all.filter(function(t){ return t.n===n; })[0];
+          chips += '<span class="dc">'+tileHTML(rep,'xs')+' Số '+n+' — có đúng '+n+' thẻ</span>';
+        }
+        return '<div class="tut-card"><h2>2. Bộ bài chỉ có 28 thẻ — số nào có đúng bấy nhiêu thẻ</h2>'
+          + '<div class="tut-dist">'+chips+'</div>'
+          + '<p class="tut-txt">Cộng lại: 1+2+3+4+5+6+7 = <b>28 thẻ</b>. Mỗi thẻ còn có <b>màu + ký hiệu riêng</b> (ví dụ số 5 có 4 thẻ đỏ và 1 thẻ đen). Đây là nền của mọi suy luận: <b>thấy một thẻ ở đâu thì chính thẻ đó không thể nằm trong rack của bạn</b>.</p>'
+          + '<p class="tut-txt">⚠️ Lưu ý hay nhầm: thấy Mai cầm <b>1 thẻ 5 đỏ</b> chỉ loại được đúng thẻ đó — bộ bài có tới <b>4 thẻ 5 đỏ giống hệt nhau</b>, 3 thẻ còn lại vẫn có thể là của bạn. Gạch loại trừ là gạch <b>từng thẻ cụ thể</b>, không gạch cả loại.</p>'
+          + '<div class="tut-hint">Nhìn rack của Mai ở bước trước: cô ấy có 5 đỏ + 5 đen — cùng số, khác màu. Chi tiết này sẽ có ích ngay ở các bước sau.</div></div>';
+      },
+      /* 3 — Chọn 1 trong 3 câu hỏi */
+      function(){
+        if(TT.chosenQ===8){
+          return '<div class="tut-card"><h2>3. Mỗi lượt được bày 3 câu — chọn 1 câu để trả lời</h2>'
+            + '<div class="tut-ok">✅ Bạn đã chọn <b>Câu 8</b>. 2 câu còn lại (Câu 3 và Câu 2) <b>không mất đi</b> — chúng ở lại cho người chơi tiếp theo, cộng thêm 1 câu mới. Sang bước sau để trả lời Câu 8.</div></div>'
+            + tutQCardHTML(8, 'Bạn', null);
+        }
+        var h = '<div class="tut-card"><h2>3. Mỗi lượt được bày 3 câu — chọn 1 câu để trả lời</h2>'
+          + '<p class="tut-txt">Tới lượt bạn, game bày <b>3 quân bài câu hỏi</b> (2 câu chưa được chọn của lượt trước + 1 câu mới rút). <b>Chạm vào 1 quân</b> để mở popup đọc kỹ cả câu rồi mới chốt — đừng chọn vội khi chưa đọc hết chữ.</p>'
+          + '<p class="tut-txt">Trong bài học này, hãy chọn <b>Câu 8</b> (đếm số màu) để đi tiếp mạch suy luận mẫu.</p>'
+          + '<div id="tutPickMsg"></div></div>'
+          + '<div class="qzone"><div class="qcard wide"><div class="qk">Thẻ câu hỏi — chọn 1 trong 3</div><div class="qtext" style="font-size:17px;">Tới lượt bạn — chọn 1 câu để trả lời</div><div class="qoffer">';
+        [8,3,2].forEach(function(qid){
+          var q = QBYID[qid];
+          h += '<button class="qpick-card" data-tq="'+qid+'"><span class="qp-head"><span class="qp-num">'+q.id+'</span><span class="qp-kind">'+(q.type==='count'?'Câu đếm số lượng':'Câu so sánh hơn / kém')+'</span></span>'
+             + '<span class="qp-text">'+esc(q.text(3))+'</span><span class="qp-foot">👆 Chạm để đọc kỹ &amp; chọn câu này</span></button>';
+        });
+        return h + '</div><div class="claim-note">Mỗi câu hỏi chỉ xuất hiện <b>đúng 1 lần trong mỗi vòng</b> — hỏi hết cả bộ mới xáo lại từ đầu.</div></div></div>';
+      },
+      /* 4 — Trả lời câu đếm */
+      function(){
+        if(TT.answeredQ8){
+          return '<div class="tut-card"><h2>4. Trả lời phải đúng sự thật — chỉ tính rack mình thấy</h2>'
+            + '<div class="tut-ok">✅ Đúng: bạn nhìn thấy <b>5 màu</b> — Xanh lá, Vàng, Nâu, Đen, Đỏ. (Hồng và Xanh dương không xuất hiện trên 3 rack bạn thấy.)<br/>⚠️ Nhưng nhớ: câu trả lời này <b>không cho bạn thêm thông tin gì về mã của mình</b> — vì bạn trả lời mà không hề tính rack của mình. Nó chỉ giúp 3 đối thủ (những người đang thấy rack của bạn) suy luận về mã của <i>họ</i>.</div></div>'
+            + tutQCardHTML(8, 'Bạn', 5);
+        }
+        var h = '<div class="tut-card"><h2>4. Trả lời phải đúng sự thật — chỉ tính rack mình thấy</h2>'
+          + '<p class="tut-txt">Giờ trả lời Câu 8. Đếm số màu <b>khác nhau</b> xuất hiện trên 3 rack bạn nhìn thấy (Lan, Hùng, Mai) — <b>không tính rack của mình</b> (dù sao bạn cũng không thấy nó). Bấm vào đáp án bạn cho là đúng:</p>'
+          + '<div id="tutAnsMsg"></div></div>'
+          + '<div class="tut-board">'+tutBoardHTML({})+'</div>';
+        h += '<div class="qzone"><div class="qcard"><div class="qk">Thẻ câu hỏi</div><div><span class="qnum">8</span></div><div class="qtext">'+esc(QBYID[8].text(3))+'</div><div class="ans-opts">';
+        for(var v=0; v<=7; v++) h += '<button data-tans="'+v+'">'+v+'</button>';
+        return h + '</div><div class="claim-note">Trả lời sai sự thật là phạm luật — trong ván thật game sẽ nhắc bạn trả lời lại ngay.</div></div></div>';
+      },
+      /* 5 — Câu dư lăn sang */
+      function(){
+        var cards = [[3,'↩ Câu dư từ lượt của bạn'],[2,'↩ Câu dư từ lượt của bạn'],[11,'✨ Câu mới rút thêm']];
+        var h = '<div class="tut-card"><h2>5. Hai câu bạn không chọn sẽ lăn sang người tiếp theo</h2>'
+          + '<p class="tut-txt">Bạn đã trả lời Câu 8. Giờ tới lượt <b>Lan</b>: cô ấy được bày đúng <b>2 câu dư</b> từ lượt của bạn (Câu 3, Câu 2) + <b>1 câu mới</b> (Câu 11), rồi chọn 1 trong 3 câu đó.</p>'
+          + '<p class="tut-txt">Vì vậy đừng “để dành” câu dễ: câu bạn bỏ qua có thể rơi vào tay đối thủ. Và vì mỗi câu chỉ xuất hiện 1 lần mỗi vòng, cuối vòng số câu bày ra có thể rút xuống còn 2 rồi 1 — đó là bình thường.</p></div>'
+          + '<div class="qzone"><div class="qcard wide"><div class="qk">Thẻ câu hỏi — lượt của Lan</div><div class="qtext" style="font-size:17px;">Lan đang chọn 1 trong 3 câu hỏi…</div><div class="qoffer">';
+        cards.forEach(function(cd){
+          var q = QBYID[cd[0]];
+          h += '<div class="qpick-card"><span class="qp-head"><span class="qp-num">'+q.id+'</span><span class="qp-kind">'+(q.type==='count'?'Câu đếm số lượng':'Câu so sánh hơn / kém')+'</span></span><span class="qp-text">'+esc(q.text(3))+'</span><span class="qp-foot wait">'+cd[1]+'</span></div>';
+        });
+        return h + '</div></div></div>';
+      },
+      /* 6 — Manh mối 1 */
+      function(){
+        return '<div class="tut-card"><h2>6. Đối thủ trả lời — manh mối đầu tiên về mã của BẠN</h2>'
+          + '<p class="tut-txt">Lan chọn Câu 28 và trả lời <b>“2”</b>. Khi Lan trả lời, cô ấy nhìn thấy rack của <b>bạn, Hùng và Mai</b> (trừ rack của chính cô ấy). Bạn biết rõ: Hùng <b>không có số 5 nào</b> (2 vàng, 3 đen, 6 xanh lá), còn Mai <b>có số 5</b> (5 đỏ, 5 đen).</p></div>'
+          + tutQCardHTML(28, 'Lan', 2)
+          + '<div class="tut-card"><p class="tut-txt" style="margin-top:0;"><b>Vậy bạn suy ra được gì chắc chắn về rack của mình?</b></p>'
+          + tutQuizHTML('q1', [
+              'Rack của mình không có số 5 nào',
+              'Rack của mình có ít nhất một thẻ số 5',
+              'Cả 3 thẻ của mình đều là số 5'
+            ]) + '</div>';
+      },
+      /* 7 — Manh mối 2 */
+      function(){
+        return '<div class="tut-card"><h2>7. Manh mối 2 — rack của bạn là 3 số liên tiếp</h2>'
+          + '<p class="tut-txt">Tới lượt Hùng, anh ấy trả lời Câu 7 là <b>“1”</b>. Hùng nhìn thấy rack của <b>bạn, Lan và Mai</b>. Kiểm tra 2 rack bạn cũng thấy: Lan có 1–4–7 (không liên tiếp), Mai có 4–5–5 (chỉ có 2 số khác nhau là 4 và 5, không thành dãy 3 số liên tiếp).</p></div>'
+          + tutQCardHTML(7, 'Hùng', 1)
+          + '<div class="tut-card"><p class="tut-txt" style="margin-top:0;"><b>Vậy “1 rack” mà Hùng đếm được là rack của ai?</b></p>'
+          + tutQuizHTML('q2', [
+              'Rack của Lan',
+              'Rack của Mai',
+              'Rack của chính mình — 3 số của mình là 3 số liên tiếp nhau'
+            ]) + '</div>';
+      },
+      /* 8 — Manh mối 3 */
+      function(){
+        return '<div class="tut-card"><h2>8. Manh mối 3 — câu so sánh và trường hợp “Bằng nhau”</h2>'
+          + '<p class="tut-txt">Câu so sánh luôn có 3 đáp án có thể: <b>nhiều A hơn / bằng nhau / nhiều B hơn</b> — đừng bỏ qua đáp án “Bằng nhau”, nó thường là manh mối rất mạnh. Mai trả lời Câu 33 là <b>“Bằng nhau”</b>: trong các rack cô ấy thấy (của <b>bạn, Lan, Hùng</b>), số thẻ số 4 bằng số thẻ số 5. Lan đóng góp 1 thẻ số 4, Hùng không có số 4 hay số 5 nào.</p>'
+          + '<p class="tut-txt">Kết hợp cả 3 manh mối: mã của bạn <b>có số 5</b> và là <b>3 số liên tiếp</b> — chỉ còn 3 khả năng: <b>3–4–5</b>, <b>4–5–6</b> hoặc <b>5–6–7</b>. Hai bộ đầu đều chứa 1 số 4 + 1 số 5: nếu mã của bạn là một trong hai bộ đó, Mai đã phải thấy số 4 nhiều hơn số 5 (2 so với 1) chứ không phải bằng nhau.</p></div>'
+          + tutQCardHTML(33, 'Mai', 0)
+          + '<div class="tut-card"><p class="tut-txt" style="margin-top:0;"><b>Vậy bộ số của bạn là?</b></p>'
+          + tutQuizHTML('q3', [ '3 – 4 – 5', '4 – 5 – 6', '5 – 6 – 7' ]) + '</div>';
+      },
+      /* 9 — Note */
+      function(){
+        var struckCount = Object.keys(TT.struck).length;
+        var h = '<div class="tut-card"><h2>9. Sổ Note — gạch loại trừ để không phải nhớ bằng đầu</h2>'
+          + '<p class="tut-txt">Trong ván thật, nút <b>📝 Note</b> ở góc dưới mở sổ suy luận: <b>Bảng loại trừ</b> 28 thẻ, <b>Nhật ký câu hỏi</b> (tự ghi mọi câu trả lời kèm ảnh chụp bàn — snapshot — tại thời điểm đó, rack nào vừa đổi sẽ được đánh dấu) và ô ghi chú riêng. Việc đầu tiên ở mỗi mã mới: gạch ✕ mọi thẻ đang nằm trên rack đối thủ — chúng không thể là của bạn.</p>'
+          + (TT.struckDone
+              ? '<div class="tut-ok">✅ Đã gạch <b>9 thẻ</b> đang thấy trên bàn — khả năng rút từ <b>28 xuống 19 thẻ</b>. Kết hợp thêm 3 câu trả lời của đối thủ ở bước 6–8, máy suy luận của game thu từ 135 tổ hợp khả thi xuống còn đúng <b>1 bộ số: 5–6–7</b>.<br/>Chú ý thẻ 5 đỏ của Mai đã bị gạch ✕ — nhưng đó là <i>chính thẻ đó</i>; các thẻ 5 đỏ còn lại vẫn còn nguyên khả năng (và thật ra mã của bạn có 1 thẻ 5 đỏ!).</div>'
+              : '<p class="tut-txt">Bấm nút dưới đây để gạch ngay 9 thẻ đang nằm trên 3 rack đối thủ:</p>')
+          + '<div style="margin-top:12px;"><button class="btn-claim" id="btnTutStrike" style="padding:12px 18px; font-size:15px;" '+(TT.struckDone?'disabled':'')+'>✕ GẠCH LÁ ĐANG HIỆN TRÊN BÀN</button></div>'
+          + '<div class="remain" style="margin-top:12px;">Còn '+(28-struckCount)+' / 28 khả năng chưa bị loại</div>'
+          + '<div style="margin-top:10px;">'+tutPyramidHTML()+'</div>'
+          + '<p class="legend">Trong ván thật: chạm từng ô để xoay trạng thái chưa biết → ✕ loại trừ → ? có thể → ✓ chắc chắn. Chế độ <b>Hỗ trợ</b> tự gạch sẵn các thẻ đang thấy ở đầu mỗi mã; chế độ <b>Giấy</b> thì bạn tự gạch 100% như thi đấu.</p></div>';
+        return h;
+      },
+      /* 10 — Tuyên bố sai */
+      function(){
+        var h = '<div class="tut-card"><h2>10. Trường hợp phổ biến: tuyên bố SAI thì mất gì?</h2>'
+          + '<p class="tut-txt">Bạn được tuyên bố <b>bất cứ lúc nào</b> — kể cả ngay sau khi đối thủ vừa trả lời, không cần chờ tới lượt mình. Nhưng tuyên bố sai rất đắt. Xem minh họa: giả sử Mai vội tuyên bố mã của cô ấy là 4–5–6 khi chưa chắc…</p>'
+          + (TT.vigPlayed
+              ? '<div class="feed" style="margin-top:10px;"><div class="fitem">🎯 <b>Mai</b> tuyên bố mã <b>4 – 5 – 6</b> — <b>SAI!</b> Không được xem mã, đổi rack mới.</div></div>'
+                + '<div class="tut-err">Hậu quả của 1 tuyên bố sai:<br/>• <b>0 điểm</b> và <b>không được xem</b> mã thật — mất trắng mọi manh mối đã gom.<br/>• Rack bị <b>thay 3 thẻ mới ngay</b>, sổ Note mở <b>trang Mã mới</b> (trang cũ chỉ xem lại được).<br/>• Với đối thủ cũng vậy: thấy dòng “tuyên bố sai” trong dòng sự kiện là biết rack của họ vừa đổi — nhật ký sẽ đánh dấu rack mới ở snapshot tiếp theo.<br/>👉 Chỉ tuyên bố khi đã khóa chắc bộ số; đoán liều sớm gần như luôn lỗ.</div>'
+              : '<div style="margin-top:12px;"><button class="btn-claim" id="btnTutVig" style="padding:12px 18px; font-size:15px;">▶ XEM MINH HỌA TUYÊN BỐ SAI</button></div>')
+          + '</div>';
+        return h;
+      },
+      /* 11 — Tuyên bố của bạn */
+      function(){
+        if(TT.claimDone){
+          return '<div class="tut-card"><h2>11. Tuyên bố đúng — +1 điểm và được xem mã</h2>'
+            + '<div class="tut-ok">🎯 <b>ĐÚNG CẢ BỘ! +1 ĐIỂM.</b> Mã của bạn đúng là 5 đỏ – 6 hồng – 7 xanh dương như bạn suy luận. Tuyên bố đúng thì được <b>xem mã</b> (đúng như trên), 3 thẻ cũ ra ngoài, bạn nhận <b>mã mới</b> và sổ Note mở <b>trang Mã #2</b> — bắt đầu vòng suy luận mới. Đạt <b>3 điểm</b> trước là thắng cả ván.</div>'
+            + '<div class="reveal-tiles">'+TT.racks[0].map(function(t){ return tileHTML(t); }).join('')+'</div></div>'
+            + '<div class="tut-board">'+tutBoardHTML({ scores:[1,0,0,0] })+'</div>';
+        }
+        var h = '<div class="tut-card"><h2>11. Tới lượt bạn tuyên bố mã</h2>'
+          + '<p class="tut-txt">Bạn đã khóa được bộ số từ 3 manh mối: <b>có số 5</b> + <b>3 số liên tiếp</b> + <b>không có số 4</b>. Chọn 3 số cho mã của bạn rồi bấm CÔNG BỐ. (Chế độ thường chỉ cần đúng <b>số</b> — thứ tự không quan trọng.)</p>'
+          + '<div class="gslots" id="tutSlots" style="margin-top:14px;"></div>'
+          + '<div class="picker" id="tutPicker"></div>'
+          + '<div id="tutClaimMsg"></div>'
+          + '<div class="modal-btns"><button class="btn-small grow" id="btnTutClearGuess" style="padding:12px;">Xoá chọn</button><button class="btn-claim grow" id="btnTutSubmit" style="padding:13px;">CÔNG BỐ MÃ NÀY</button></div></div>';
+        return h;
+      },
+      /* 12 — Kết thúc + các trường hợp còn lại */
+      function(){
+        return '<div class="tut-card"><h2>12. Bạn đã nắm trọn 1 vòng chơi — và các trường hợp còn lại</h2>'
+          + '<p class="tut-txt">Vòng chơi đầy đủ: <b>chọn 1 trong 3 câu → trả lời trung thực theo rack mình thấy → nghe đối thủ trả lời để suy luận → gạch Note → tuyên bố khi chắc</b>. Lặp lại tới khi có người đủ 3 điểm. Các trường hợp phổ biến còn lại:</p>'
+          + '<div class="tut-cases">'
+          + '<div class="tut-case"><h3>🏆 Thắng ván</h3><p>Đủ <b>3 điểm</b> trước là thắng ngay (bản Master: 2 điểm). Mỗi tuyên bố đúng = 1 điểm + đổi mã mới, nên ván thường có nhiều vòng suy luận nối tiếp nhau.</p></div>'
+          + '<div class="tut-case"><h3>🪑 Rack trống khi thiếu người</h3><p>Bàn luôn đủ <b>4 rack</b>: chơi 2–3 người thì thêm rack trống ai cũng nhìn thấy. Rack trống vẫn được tính trong mọi câu trả lời, và cũng được thay thẻ mới sau mỗi tuyên bố đúng.</p></div>'
+          + '<div class="tut-case"><h3>🃏 Chồng thẻ số sắp cạn</h3><p>Khi chồng chỉ còn đúng <b>1 thẻ</b> mà cần thay thẻ, toàn bộ thẻ đã loại được <b>xáo lại thành chồng mới</b> — ván không bao giờ kẹt vì hết thẻ.</p></div>'
+          + '<div class="tut-case"><h3>🔀 Hết vòng câu hỏi</h3><p>Mỗi câu chỉ hỏi <b>1 lần mỗi vòng</b>: 2 câu chưa chọn lăn sang người sau, hỏi hết cả bộ (23 hoặc 35 câu) mới xáo lại. Cuối vòng có thể chỉ còn bày 2 rồi 1 câu.</p></div>'
+          + '<div class="tut-case"><h3>🎨 Expansion 2 — Chuyên gia (số + màu)</h3><p>Tuyên bố phải đúng <b>cả số lẫn màu</b> từng thẻ. Đúng số nhưng sai màu: <b>không điểm nhưng KHÔNG đổi rack</b> — giữ mã đó suy luận tiếp về màu. Ở ván mẫu vừa rồi, số đã khóa 5–6–7 nhưng vẫn còn 6 khả năng về màu — sang chế độ Chuyên gia là phải gom thêm manh mối màu nữa.</p></div>'
+          + '<div class="tut-case"><h3>🔢 Expansion 3 — Master 7777</h3><p>Mỗi rack <b>4 thẻ</b> thay vì 3, ngưỡng trong các câu hỏi được chỉnh lại theo cỡ rack 4, và chỉ cần <b>2 điểm</b> là thắng.</p></div>'
+          + '</div>'
+          + '<div class="tut-hint">Sẵn sàng rồi? Vào ván thật đầu tiên cứ chơi <b>với máy, độ khó Dễ, chế độ Note “Hỗ trợ”</b> — quen tay rồi hãy tăng độ khó và tắt hỗ trợ.</div>'
+          + '<div class="modal-btns"><button class="btn-claim grow" id="btnTutPlayEasy" style="padding:14px;">▶ CHƠI THỬ VỚI MÁY (DỄ)</button><button class="btn-small grow" id="btnTutHome" style="padding:13px;">Về màn hình chính</button></div></div>';
+      }
+    ];
+    var TUT_WIRE = [
+      function(){},
+      function(){},
+      /* 3 — chọn câu: chạm quân bài mở popup đọc kỹ */
+      function(){
+        document.querySelectorAll('[data-tq]').forEach(function(b){
+          b.addEventListener('click', function(){ tutOpenQPick(+b.dataset.tq); });
+        });
+      },
+      /* 4 — trả lời câu đếm */
+      function(){
+        document.querySelectorAll('[data-tans]').forEach(function(b){
+          b.addEventListener('click', function(){
+            var v = +b.dataset.tans, msg = $('tutAnsMsg');
+            if(v===5){
+              TT.answeredQ8 = true; TT.done[TT.step] = true;
+              if(window.SFX) SFX.play('good');
+              renderTutStep();
+            } else {
+              b.classList.add('wrong');
+              if(window.SFX) SFX.play('bad');
+              setTimeout(function(){ b.classList.remove('wrong'); }, 350);
+              if(msg) msg.innerHTML = '<div class="tut-err">Chưa đúng — đếm lại từng rack: Lan có Xanh lá, Nâu, Vàng · Hùng có Vàng, Đen, Xanh lá · Mai có Nâu, Đỏ, Đen. Gộp cả 3 rack, có bao nhiêu màu <b>khác nhau</b> tất cả? (Màu trùng nhau chỉ tính 1 lần.)</div>';
+            }
+          });
+        });
+      },
+      function(){},
+      function(){
+        wireTutQuiz('q1', 1,
+          'Chính xác! Lan đếm được 2 rack có số 5 trong số rack của bạn, Hùng và Mai. Hùng đóng góp 0, Mai đóng góp 1 — vậy rack còn lại (của <b>bạn</b>) phải đóng góp 1: <b>bạn chắc chắn có ít nhất một thẻ số 5</b>. Đây là khuôn suy luận cốt lõi của game: lấy đáp án của đối thủ, trừ đi phần bạn tự nhìn thấy, phần còn lại chính là thông tin về rack của bạn.',
+          'Chưa đúng — hãy trừ dần: tổng số rack có số 5 mà Lan đếm là 2. Trong đó Mai chắc chắn đóng góp 1 (cô ấy có 5 đỏ + 5 đen, vẫn chỉ tính là 1 rack), Hùng đóng góp 0. Vậy ai đóng góp nốt 1 rack còn lại?');
+      },
+      function(){
+        wireTutQuiz('q2', 2,
+          'Đúng! Lan (1–4–7) và Mai (4–5–5) đều không có 3 số liên tiếp, nên “1 rack” Hùng đếm được chỉ có thể là <b>rack của bạn</b>. Kết hợp manh mối 1: mã của bạn là 3 số liên tiếp <b>và</b> có số 5 — còn 3 khả năng: <b>3–4–5 · 4–5–6 · 5–6–7</b>.',
+          'Chưa đúng — tự kiểm tra 2 rack bạn nhìn thấy: Lan 1–4–7 có liên tiếp không? Mai 4–5–5 có đủ 3 số khác nhau để liên tiếp không? Nếu cả hai đều không, “1 rack” đó phải thuộc về người còn lại mà Hùng nhìn thấy.');
+      },
+      function(){
+        wireTutQuiz('q3', 2,
+          'Chính xác — <b>5–6–7</b>! Chỉ bộ này mới không chứa số 4: Mai thấy số 4 (chỉ từ Lan: 1 thẻ) bằng số 5 (chỉ từ bạn: 1 thẻ) nên mới trả lời “Bằng nhau”. Bạn đã khóa được bộ số — nhưng khoan tuyên bố vội, bước sau sẽ ghi lại vào Note cho chắc.',
+          'Chưa đúng — thử thay bộ này vào góc nhìn của Mai: cô ấy thấy Lan có 1 thẻ số 4, Hùng không có gì. Nếu mã của bạn chứa 1 số 4 và 1 số 5, Mai sẽ đếm số 4 = 2, số 5 = 1 → phải trả lời “nhiều số 4 hơn”, mâu thuẫn với “Bằng nhau”. Bộ nào không chứa số 4?');
+      },
+      /* 9 — Note: gạch thẻ đang hiện */
+      function(){
+        var b = $('btnTutStrike');
+        if(b) b.addEventListener('click', function(){
+          TT.racks.forEach(function(r, i){
+            if(i===0) return;
+            r.forEach(function(t){ TT.struck[t.id] = 1; });
+          });
+          TT.struckDone = true; TT.done[TT.step] = true;
+          if(window.SFX) SFX.play('noteTap');
+          renderTutStep();
+        });
+      },
+      /* 10 — minh họa tuyên bố sai */
+      function(){
+        var b = $('btnTutVig');
+        if(b) b.addEventListener('click', function(){
+          TT.vigPlayed = true; TT.done[TT.step] = true;
+          if(window.SFX) SFX.play('bad');
+          renderTutStep();
+        });
+      },
+      /* 11 — tuyên bố mã */
+      function(){
+        if(TT.claimDone) return;
+        renderTutGuess();
+        $('btnTutClearGuess').addEventListener('click', function(){
+          TT.guess = [null,null,null]; TT.guessSel = 0; renderTutGuess();
+          var m = $('tutClaimMsg'); if(m) m.innerHTML = '';
+        });
+        $('btnTutSubmit').addEventListener('click', function(){
+          var nums = TT.guess.slice().sort(function(a,b){ return a-b; }).join(',');
+          var msg = $('tutClaimMsg');
+          if(nums==='5,6,7'){
+            TT.claimDone = true; TT.done[TT.step] = true;
+            if(window.SFX){ SFX.play('good'); SFX.play('score'); }
+            renderTutStep();
+          } else {
+            if(window.SFX) SFX.play('bad');
+            if(msg) msg.innerHTML = '<div class="tut-err">❌ Bộ số này chưa đúng. Trong ván thật, tuyên bố sai là <b>mất rack này ngay</b> (0 điểm, không được xem mã, đổi mã mới) — ở tutorial bạn được thử lại. Đối chiếu lại 3 manh mối: có số 5 · 3 số liên tiếp · không có số 4.</div>';
+            TT.guess = [null,null,null]; TT.guessSel = 0; renderTutGuess();
+          }
+        });
+      },
+      /* 12 — kết thúc */
+      function(){
+        $('btnTutPlayEasy').addEventListener('click', function(){
+          exitTutorial();
+          cfg.aiCount = 3; cfg.diff = 'easy'; cfg.qset = 'goc'; cfg.expert = false; cfg.master = false; cfg.noteMode = 'hotro';
+          tutSyncSeg('segAiCount','3'); tutSyncSeg('segDiff','easy'); tutSyncSeg('segQSet','goc'); tutSyncSeg('segNoteMode','hotro');
+          ['tglExpert','tglMaster'].forEach(function(id){
+            var el = $(id); if(el){ el.classList.remove('on'); el.setAttribute('aria-checked','false'); }
+          });
+          startGame();
+        });
+        $('btnTutHome').addEventListener('click', exitTutorial);
+      }
+    ];
+    function renderTutGuess(){
+      var slots = $('tutSlots'), picker = $('tutPicker'); if(!slots || !picker) return;
+      var h = '';
+      TT.guess.forEach(function(g, i){
+        h += '<button class="gslot'+(g!==null?' filled':'')+'" data-tslot="'+i+'" '+(+i===TT.guessSel?'style="outline:3px solid var(--gold-lo);"':'')+'><span class="gn">'+(g!==null?g:'?')+'</span><span class="gc">ô '+(i+1)+'</span></button>';
+      });
+      slots.innerHTML = h;
+      slots.querySelectorAll('[data-tslot]').forEach(function(b){
+        b.addEventListener('click', function(){ TT.guessSel = +b.dataset.tslot; renderTutGuess(); });
+      });
+      var pk = '<div class="plbl">Chọn số cho ô '+(TT.guessSel+1)+'</div><div class="prow">';
+      for(var n=1;n<=7;n++) pk += '<button data-tn="'+n+'" class="'+(TT.guess[TT.guessSel]===n?'on':'')+'">'+n+'</button>';
+      picker.innerHTML = pk + '</div>';
+      picker.querySelectorAll('[data-tn]').forEach(function(b){
+        b.addEventListener('click', function(){
+          TT.guess[TT.guessSel] = +b.dataset.tn;
+          if(TT.guessSel<2) TT.guessSel++;
+          renderTutGuess();
+        });
+      });
+      var sub = $('btnTutSubmit');
+      if(sub){
+        var complete = TT.guess.every(function(g){ return g!==null; });
+        sub.disabled = !complete; sub.style.opacity = complete ? '1' : '.55';
+      }
+    }
+    function tutSyncSeg(id, val){
+      var el = $(id); if(!el) return;
+      el.querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x.dataset.v===val); });
+    }
+    /* Popup đọc kỹ câu hỏi riêng của tutorial (không dùng chung popup ván thật) */
+    var tutPendingQ = null;
+    function tutOpenQPick(qid){
+      var q = QBYID[qid]; if(!q) return;
+      tutPendingQ = qid;
+      $('tutQpNum').textContent = q.id;
+      $('tutQpText').textContent = q.text(3);
+      $('tutQpNote').textContent = qid===8
+        ? 'Chọn câu này là bạn sẽ trả lời nó — chỉ dựa trên các rack bạn nhìn thấy, không tính rack của mình.'
+        : 'Đọc kỹ cả câu trước khi chọn nhé. Trong bài học này, mạch suy luận mẫu đi theo Câu 8 — bạn vẫn có thể chọn câu này để xem điều gì xảy ra.';
+      $('tutQPickOverlay').classList.remove('hidden');
+      if(window.SFX) SFX.play('popupOpen');
+    }
+    function tutCloseQPick(){
+      tutPendingQ = null;
+      $('tutQPickOverlay').classList.add('hidden');
+      if(window.SFX) SFX.play('popupClose');
+    }
+    $('btnTutQpBack').addEventListener('click', tutCloseQPick);
+    $('tutQPickOverlay').addEventListener('click', function(e){ if(e.target===this) tutCloseQPick(); });
+    $('btnTutQpChoose').addEventListener('click', function(){
+      var qid = tutPendingQ;
+      tutCloseQPick();
+      if(qid===null || qid===undefined) return;
+      if(qid===8){
+        TT.chosenQ = 8; TT.done[TT.step] = true;
+        if(window.SFX) SFX.play('draw');
+        renderTutStep();
+      } else {
+        var msg = $('tutPickMsg');
+        if(msg) msg.innerHTML = '<div class="tut-err">Bạn vừa chọn Câu '+qid+' — trong ván thật chọn xong là phải trả lời câu đó luôn, không đổi lại được. Ở tutorial, hãy chọn <b>Câu 8</b> để đi tiếp mạch suy luận mẫu (các câu còn lại vẫn ở lại cho Lan ở bước sau).</div>';
+        if(window.SFX) SFX.play('bad');
+      }
+    });
+    function tutSyncNav(){
+      var last = TT.step === TUT_STEPS.length-1;
+      $('btnTutBack').disabled = TT.step===0;
+      $('btnTutBack').style.opacity = TT.step===0 ? '.5' : '1';
+      var nx = $('btnTutNext');
+      nx.textContent = last ? '✓ HOÀN THÀNH' : 'TIẾP THEO →';
+      var need = TUT_STEPS[TT.step].req && !TT.done[TT.step];
+      nx.disabled = !!need;
+      $('tutNavHint').textContent = need ? '👆 Làm theo hướng dẫn trong bài để tiếp tục' : '';
+    }
+    function renderTutStep(){
+      $('tutProgBar').style.width = Math.round((TT.step+1)/TUT_STEPS.length*100)+'%';
+      $('tutStepLbl').textContent = 'Bước '+(TT.step+1)+' / '+TUT_STEPS.length+' — '+TUT_STEPS[TT.step].t;
+      $('tutBody').innerHTML = TUT_RENDER[TT.step]();
+      TUT_WIRE[TT.step]();
+      tutSyncNav();
+      window.scrollTo(0,0);
+    }
+    function openTutorial(){
+      var all = buildTiles();
+      TT = {
+        all: all, step: 0, done: {}, chosenQ: null, answeredQ8: false,
+        struck: {}, struckDone: false, vigPlayed: false,
+        guess: [null,null,null], guessSel: 0, claimDone: false,
+        racks: []
+      };
+      TT.racks = [
+        [all[10], all[18], all[21]],  /* Bạn: 5 đỏ, 6 hồng, 7 xanh dương */
+        [all[0],  all[6],  all[25]],  /* Lan: 1 xanh lá, 4 nâu, 7 vàng */
+        [all[1],  all[3],  all[15]],  /* Hùng: 2 vàng, 3 đen, 6 xanh lá */
+        [all[7],  all[11], all[14]]   /* Mai: 4 nâu, 5 đỏ, 5 đen */
+      ];
+      $('setupScreen').classList.add('hidden');
+      $('gameScreen').classList.add('hidden');
+      $('fabNote').classList.add('hidden');
+      $('tutorialScreen').classList.remove('hidden');
+      if(window.SFX) SFX.play('popupOpen');
+      renderTutStep();
+    }
+    function exitTutorial(){
+      tutCloseQPick();
+      $('tutorialScreen').classList.add('hidden');
+      $('setupScreen').classList.remove('hidden');
+      window.scrollTo(0,0);
+    }
+    $('btnTutorial').addEventListener('click', openTutorial);
+    $('btnExitTutorial').addEventListener('click', exitTutorial);
+    $('btnTutBack').addEventListener('click', function(){
+      if(TT && TT.step>0){ TT.step--; renderTutStep(); }
+    });
+    $('btnTutNext').addEventListener('click', function(){
+      if(!TT) return;
+      if(TT.step >= TUT_STEPS.length-1){ exitTutorial(); return; }
+      TT.step++;
+      if(window.SFX) SFX.play('draw');
+      renderTutStep();
+    });
     </script>
   </body>
 </html>
