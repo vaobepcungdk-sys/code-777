@@ -232,6 +232,15 @@
       .ans-opts button:hover{ border-color:var(--gold-lo); }
       .ans-opts button.wrong{ border-color:#d33; background:#ffe3e0; animation:shake .3s; }
       @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+      /* ---------- CHẾ ĐỘ NÓI DỐI ---------- */
+      .lie-row{ margin-top:14px; text-align:center; }
+      .btn-lie{
+        border:2px dashed #a05a00; background:#fff7e0; color:#7a4a00; font-weight:900; font-size:14.5px;
+        border-radius:12px; padding:11px 18px; font-family:inherit; cursor:pointer;
+      }
+      .btn-lie.on{ background:linear-gradient(180deg,#c05a1e,#96420f); border:2px solid #7a2f05; color:#fff; box-shadow:0 0 0 3px rgba(255,170,60,.45); }
+      .lie-hint{ margin-top:8px; font-size:12.5px; font-weight:600; color:var(--ink-soft); line-height:1.5; max-width:540px; margin-left:auto; margin-right:auto; }
+      .jitem .jh .lietag{ font-size:10.5px; font-weight:900; color:#fff; background:#96420f; border-radius:99px; padding:2px 8px; white-space:nowrap; }
       .claim-note{ margin-top:10px; font-size:13px; font-weight:700; color:var(--ink-soft); }
       .feed{ margin:16px auto 0; max-width:620px; }
       .feed .fitem{
@@ -580,6 +589,10 @@
             <div class="t-txt">Expansion 3 — Code 7777 Master: rack 4 thẻ<small>Mỗi rack 4 thẻ thay vì 3, ngưỡng câu hỏi được chỉnh lại, thắng ở 2 điểm thay vì 3.</small></div>
             <button class="switch" id="tglMaster" role="switch" aria-checked="false" aria-label="Bật Expansion 3 Master 7777"></button>
           </div>
+          <div class="toggle-row">
+            <div class="t-txt">Chế độ Nói Dối 🤥 — mỗi người 1 lần nói dối trong cả ván<small>Khi trả lời câu hỏi, mỗi người (kể cả máy) được nói dối đúng 1 lần: đáp án sai được ghi nhận như đáp án thật. Không ai biết ai đã nói dối hay nói dối lúc nào — chỉ khi ván kết thúc game mới tiết lộ.</small></div>
+            <button class="switch" id="tglLie" role="switch" aria-checked="false" aria-label="Bật chế độ Nói Dối"></button>
+          </div>
         </div>
 
         <div class="opt-group">
@@ -629,6 +642,8 @@
               <select id="cfgExpert"><option value="0">Tắt</option><option value="1">Bật</option></select></label>
             <label>Expansion 3 — Master 7777 (rack 4 thẻ)
               <select id="cfgMaster"><option value="0">Tắt</option><option value="1">Bật</option></select></label>
+            <label>Chế độ Nói Dối (mỗi người 1 lần/ván)
+              <select id="cfgLie"><option value="0">Tắt</option><option value="1">Bật</option></select></label>
             <label>Chế độ note
               <select id="cfgNoteMode"><option value="hotro">Hỗ trợ (tự gạch thẻ đang thấy)</option><option value="giay">Giấy (tự gạch 100%)</option></select></label>
             <label>Máy bù ghế trống
@@ -655,6 +670,7 @@
           <li>Đến lượt, bạn được bày <b>3 thẻ câu hỏi</b> (2 câu chưa chọn của lượt trước + 1 câu mới rút): chạm vào 1 quân bài để đọc kỹ cả câu rồi chọn 1 câu và <b>tự trả lời trung thực chỉ dựa trên các rack mình nhìn thấy</b> (không tính rack của mình). 2 câu chưa chọn <b>ở lại cho người chơi tiếp theo</b>. Mỗi câu hỏi chỉ xuất hiện đúng 1 lần — rút hết cả bộ mới xáo lại từ đầu. Câu trả lời cho thông tin cho mọi người — trừ chính người trả lời.</li>
           <li>Bất cứ lúc nào cũng tuyên bố được mã của mình (nút <b>Tuyên bố mã</b>). Đúng: <b>+1 điểm</b> và được xem mã. Sai: 0 điểm và không được xem. <b>Dù đúng hay sai đều thay 3 thẻ mới.</b></li>
           <li>Đạt <b>3 điểm</b> trước là thắng (Master: 2 điểm). Khi chồng thẻ số chỉ còn đúng 1 thẻ mà cần thay thẻ, toàn bộ thẻ đã loại được xáo lại thành chồng mới.</li>
+          <li><b>Chế độ Nói Dối</b> (bật trong phần thiết lập ván với máy hoặc cấu hình phòng online): mỗi người được <b>nói dối đúng 1 lần trong cả ván</b> khi trả lời câu hỏi — đáp án sai được ghi nhận như đáp án thật và không ai biết ai đã nói dối lúc nào; hết ván game mới tiết lộ. Khi suy luận, hãy chừa khả năng có 1 đáp án của mỗi đối thủ là giả.</li>
           <li>Bàn luôn có đủ 4 rack: thiếu người thì thêm rack trống ai cũng nhìn thấy.</li>
         </ul>
       </details>
@@ -1078,6 +1094,20 @@
       }
       return { numOk: numOk, fullOk: expert ? (numOk && tileOk) : numOk };
     }
+    /* ---- CHẾ ĐỘ NÓI DỐI: sinh 1 đáp án SAI nhưng nghe hợp lý từ đáp án thật ----
+       Câu đếm: lệch ±1/±2 (kẹp trong 0–12 như các nút đáp án). Câu so sánh: đổi sang
+       1 trong 2 kết quả còn lại. Đáp án nói dối được ghi nhận y như đáp án thật —
+       không có dấu hiệu nào phân biệt được ở phía người nghe. */
+    var LIE_CHANCE = 0.3; /* xác suất máy dùng lần nói dối của mình ở 1 lượt trả lời khi vẫn còn lần */
+    function lieValueFor(q, trueV){
+      if(q.type==='count'){
+        var opts = [trueV-1, trueV+1, trueV-2, trueV+2].filter(function(x){ return x>=0 && x<=12; });
+        if(!opts.length) return trueV;
+        return opts[Math.floor(Math.random()*opts.length)];
+      }
+      var opts2 = [-1, 0, 1].filter(function(x){ return x!==trueV; });
+      return opts2[Math.floor(Math.random()*opts2.length)];
+    }
     </script>
 
     <script>
@@ -1109,7 +1139,7 @@
 
     var AI_NAMES = ['Lan','Hùng','Mai'];
     var S = null; /* state ván */
-    var cfg = { aiCount:3, diff:'hard', qset:'goc', expert:false, master:false, noteMode:'hotro' };
+    var cfg = { aiCount:3, diff:'hard', qset:'goc', expert:false, master:false, lie:false, noteMode:'hotro' };
     var timer = null, resumeFn = null;
     function later(fn, ms){ clearTimeout(timer); resumeFn = fn; timer = setTimeout(function(){ resumeFn=null; fn(); }, ms); }
     function stopTimer(){ clearTimeout(timer); }
@@ -1131,12 +1161,21 @@
         cfg[key] = on;
       });
     }
-    wireSwitch('tglExpert','expert'); wireSwitch('tglMaster','master');
+    wireSwitch('tglExpert','expert'); wireSwitch('tglMaster','master'); wireSwitch('tglLie','lie');
     $('btnStart').addEventListener('click', startGame);
     $('btnAgain').addEventListener('click', function(){ location.reload(); });
 
     function rs(){ return S.master ? 4 : 3; }
     function targetScore(){ return S.master ? 2 : 3; }
+    /* Chế độ Nói Dối: trạng thái của CHÍNH người chơi đang xem màn hình này.
+       Offline đọc từ S.players[0]; online đọc từ cờ riêng chủ phòng gửi kèm view
+       (myLieUsed) — tuyệt đối không lộ trạng thái của người khác. */
+    function lieModeOn(){ return !!(S && S.lie); }
+    function myLieUsed(){
+      if(!S) return true;
+      if(S.online) return !!S.myLieUsed;
+      return !!(S.players[0] && S.players[0].lieUsed);
+    }
     function racksAll(){ return S.players.map(function(p){ return p.rack; }); }
     function realPlayers(){ return S.players.filter(function(p){ return p.kind!=='dummy'; }); }
 
@@ -1144,8 +1183,8 @@
       if(window.SFX) SFX.play('draw');
       var tiles = shuffle(buildTiles());
       var size = cfg.master ? 4 : 3;
-      var players = [{ name:'Bạn', kind:'human', score:0, rack:[], codeNo:1, status:'' }];
-      for(var i=0;i<cfg.aiCount;i++) players.push({ name:AI_NAMES[i], kind:'ai', score:0, rack:[], codeNo:1, status:'', knownDiscarded:[] });
+      var players = [{ name:'Bạn', kind:'human', score:0, rack:[], codeNo:1, status:'', lieUsed:false }];
+      for(var i=0;i<cfg.aiCount;i++) players.push({ name:AI_NAMES[i], kind:'ai', score:0, rack:[], codeNo:1, status:'', knownDiscarded:[], lieUsed:false });
       while(players.length<4) players.push({ name:'Rack trống', kind:'dummy', score:0, rack:[], codeNo:1, status:'' });
       players.forEach(function(p){ p.rack = tiles.splice(0,size); });
       var qids;
@@ -1154,6 +1193,7 @@
       else qids = shuffle(range(1,35)).slice(0,23);
       S = {
         master:cfg.master, expert:cfg.expert, diff:cfg.diff, noteMode:cfg.noteMode,
+        lie:!!cfg.lie, lieArm:false, lieEvents:[],
         players:players, deck:tiles, discard:[],
         qdeck:shuffle(qids.slice()), qdiscard:[], qpool:qids, qoffer:[],
         online:false, isHost:false, myCanIdx:0,
@@ -1214,7 +1254,8 @@
         if(p.kind==='dummy') return;
         var coins='';
         for(var c=0;c<tgt;c++) coins += '<span class="coin'+(c<p.score?'':' off')+'"></span>';
-        s += '<div class="score-chip'+(i===0?' me':'')+'"><span class="coins">'+coins+'</span>'+esc(p.name)+' — '+p.score+' điểm</div>';
+        var lieTxt = (i===0 && S.lie) ? ' · 🤥 '+(myLieUsed() ? 'bạn đã nói dối' : 'bạn còn 1 lần nói dối') : '';
+        s += '<div class="score-chip'+(i===0?' me':'')+'"><span class="coins">'+coins+'</span>'+esc(p.name)+' — '+p.score+' điểm'+lieTxt+'</div>';
       });
       $('scores').innerHTML = s;
     }
@@ -1303,6 +1344,7 @@
         h += '<div class="qans">'+esc(who.name)+' trả lời: “'+esc(answerText(q, S.currentAnswer))+'”</div>';
       } else if(who.kind==='human' && S.phase==='humanAnswer'){
         h += answerOptionsHTML(q);
+        h += lieControlHTML();
       } else {
         h += '<div class="qans" style="color:var(--ink-soft)">Đang suy nghĩ…</div>';
       }
@@ -1310,6 +1352,26 @@
       qc.innerHTML = h;
       var opts = qc.querySelectorAll('[data-ans]');
       opts.forEach(function(b){ b.addEventListener('click', function(){ humanAnswer(+b.dataset.ans, b); }); });
+      var lb = qc.querySelector('#btnLieArm');
+      if(lb) lb.addEventListener('click', function(){
+        S.lieArm = !S.lieArm;
+        if(window.SFX) SFX.play('click');
+        renderQCard();
+      });
+    }
+    /* Khối điều khiển Nói Dối ngay dưới các nút đáp án (chỉ hiện ở lượt trả lời của
+       chính người chơi, khi chế độ Nói Dối đang bật). Trạng thái "đã gài" nằm ở
+       S.lieArm; đáp án chốt sau đó đi qua humanAnswer để quyết toán lần nói dối. */
+    function lieControlHTML(){
+      if(!lieModeOn()) return '';
+      if(myLieUsed()) return '<div class="lie-row"><div class="lie-hint">🤥 Chế độ Nói Dối: bạn đã dùng lần nói dối duy nhất của mình trong ván này rồi — từ giờ mọi đáp án phải đúng sự thật.</div></div>';
+      return '<div class="lie-row"><button class="btn-lie'+(S.lieArm?' on':'')+'" id="btnLieArm" aria-pressed="'+(S.lieArm?'true':'false')+'">'
+        + (S.lieArm ? '🤥 ĐANG GÀI NÓI DỐI — hãy chọn 1 đáp án SAI' : '🤥 Nói dối đáp án này (còn 1 lần)')
+        + '</button><div class="lie-hint">'
+        + (S.lieArm
+          ? 'Đáp án bạn chọn tiếp theo sẽ được ghi nhận như thật kể cả khi sai — không ai biết bạn vừa nói dối. Nếu lỡ chọn đúng đáp án thật thì không tốn lần nói dối.'
+          : 'Mỗi người được nói dối đúng <b>1 lần trong cả ván</b> khi trả lời câu hỏi. Bật nút này rồi chọn 1 đáp án sai: đáp án được ghi nhận như thật, đối thủ không hề hay biết.')
+        + '</div></div>';
     }
     function answerOptionsHTML(q){
       var h='<div class="ans-opts">';
@@ -1318,7 +1380,10 @@
       } else {
         h += '<button data-ans="1">Nhiều '+esc(q.a)+' hơn</button><button data-ans="0">Bằng nhau</button><button data-ans="-1">Nhiều '+esc(q.b)+' hơn</button>';
       }
-      return h+'</div><div class="claim-note">Trả lời phải đúng sự thật theo những gì bạn thấy — trả lời sai máy sẽ nhắc trả lời lại.</div>';
+      var note = (lieModeOn() && !myLieUsed())
+        ? 'Trả lời sai sẽ bị nhắc trả lời lại — trừ khi bạn gài 🤥 Nói dối ở dưới (cả ván chỉ được 1 lần).'
+        : 'Trả lời phải đúng sự thật theo những gì bạn thấy — trả lời sai máy sẽ nhắc trả lời lại.';
+      return h+'</div><div class="claim-note">'+note+'</div>';
     }
 
     /* ---------- Luồng lượt chơi ---------- */
@@ -1368,6 +1433,9 @@
       renderAll();
       later(function(){
         var v = evalForViewer(S.currentQ, racksAll(), S.turnIdx, rs());
+        /* Máy cũng được nói dối 1 lần/ván như người: còn lần thì có xác suất dùng,
+           đáp án sai sinh từ lieValueFor và doAnswer sẽ quyết toán + ghi sổ bí mật */
+        if(S.lie && !p.lieUsed && Math.random()<LIE_CHANCE) v = lieValueFor(S.currentQ, v);
         doAnswer(S.turnIdx, v);
       }, 850);
     }
@@ -1376,7 +1444,7 @@
       if(window.SFX) SFX.play('draw');
       var p = S.players[S.turnIdx];
       if(p.kind==='human' && window.SFX) SFX.play('turn');
-      S.currentAnswer = null; S.humanAnswered = false;
+      S.currentAnswer = null; S.humanAnswered = false; S.lieArm = false;
       S.currentQ = null;
       topUpOffer();
       S.players.forEach(function(x){ x.status=''; });
@@ -1393,14 +1461,25 @@
     }
     function humanAnswer(v, btn){
       var correct = evalForViewer(S.currentQ, racksAll(), 0, rs());
+      var armed = lieModeOn() && S.lieArm && !myLieUsed();
       if(v!==correct){
+        if(armed){
+          /* NÓI DỐI: đáp án sai được chấp nhận như đáp án thật và tốn lần nói dối
+             duy nhất của ván. Phía đối thủ không có cách nào phân biệt được. */
+          S.lieArm = false;
+          if(S.online){ onlineSubmitAnswer(v, true); return; }
+          doAnswer(0, v);
+          return;
+        }
         btn.classList.add('wrong');
         if(window.SFX) SFX.play('bad');
         setTimeout(function(){ btn.classList.remove('wrong'); }, 350);
         feedAdd('Bạn trả lời chưa đúng sự thật theo các rack đang thấy — nhìn kỹ lại rồi trả lời lại nhé.', false);
         return;
       }
-      if(S.online){ onlineSubmitAnswer(v); return; }
+      if(armed) feedAdd('Đáp án này trùng đáp án thật nên tính là trả lời thật — không tốn lần nói dối của bạn.', false);
+      S.lieArm = false;
+      if(S.online){ onlineSubmitAnswer(v, false); return; }
       doAnswer(0, v);
     }
     function snapshotNow(){
@@ -1411,6 +1490,14 @@
     }
     function doAnswer(playerIdx, v){
       var q = S.currentQ, p = S.players[playerIdx];
+      /* Quyết toán Nói Dối: đáp án khác đáp án thật + chế độ đang bật + người trả lời
+         chưa dùng lần nói dối -> tính là nói dối, tốn lần duy nhất của ván. Sổ
+         lieEvents chỉ dùng để TIẾT LỘ khi ván kết thúc; trong ván, đáp án nói dối
+         chảy vào logs/segLogs y hệt đáp án thật nên cả người lẫn máy đều bị đánh
+         lừa như nhau (máy lọc ứng viên theo segLogs nên tự nó cũng dính bẫy). */
+      var truth = evalForViewer(q, racksAll(), playerIdx, rs());
+      var isLie = !!S.lie && v!==truth && !p.lieUsed;
+      if(isLie){ p.lieUsed = true; S.lieEvents.push({ name:p.name, qid:q.id, turn:S.turnNo }); }
       if(playerIdx===0) S.humanAnswered = true;
       S.currentAnswer = v;
       S.qdiscard.push(q.id);
@@ -1435,13 +1522,15 @@
       var entry = {
         id: S.logs.length+1, turn: S.turnNo, answererIdx: playerIdx, answererName: p.name,
         qid: q.id, qtext: q.text(rs()), answerText: answerText(q, v), value: v,
-        snapshot: snap, changed: changed, codeNo: S.players[0].codeNo
+        snapshot: snap, changed: changed, codeNo: S.players[0].codeNo,
+        lieSelf: (isLie && playerIdx===0) /* chỉ câu nói dối của CHÍNH người chơi mới được đánh dấu trong nhật ký của họ */
       };
       S.logs.push(entry);
       S.segLogs.push({ qid:q.id, answererIdx:playerIdx, value:v });
       S.lastSnapshot = snap;
       if($('noteOverlay').classList.contains('hidden')){ S.noteNew = true; updateNoteBadge(); }
       feedAdd('<b>'+esc(p.name)+'</b> — Câu '+q.id+': '+esc(q.text(rs()))+' → <b>“'+esc(entry.answerText)+'”</b>', false);
+      if(isLie && playerIdx===0) feedAdd('🤥 Bạn vừa <b>nói dối</b> câu '+q.id+' — đáp án “'+esc(entry.answerText)+'” đã được ghi nhận như thật, không ai hay biết. Đó là lần nói dối duy nhất của bạn trong ván này.', false);
       S.phase='claim';
       renderAll();
       later(claimPhase, 1000);
@@ -1527,7 +1616,13 @@
         if(window.SFX) SFX.play('win');
         renderAll();
         $('winTitle').textContent = idx===0 ? '🏆 BẠN THẮNG!' : '🏆 '+p.name+' THẮNG!';
-        $('winText').innerHTML = esc(p.name)+' đạt '+p.score+' điểm sau '+S.turnNo+' lượt. '+(idx===0?'Suy luận sắc bén — bạn phá được mã của chính mình trong khi không hề nhìn thấy nó.':'Máy đã suy ra mã trước. Mở Note xem lại nhật ký + snapshot để rút kinh nghiệm cho ván sau nhé.');
+        var lieReveal = '';
+        if(S.lie){
+          lieReveal = S.lieEvents.length
+            ? ' 🤥 <b>Tiết lộ lời nói dối:</b> '+S.lieEvents.map(function(e){ return esc(e.name)+' nói dối ở câu '+e.qid+' (lượt '+e.turn+')'; }).join('; ')+'.'
+            : ' 🤥 Ván này không ai dùng lần nói dối của mình.';
+        }
+        $('winText').innerHTML = esc(p.name)+' đạt '+p.score+' điểm sau '+S.turnNo+' lượt. '+(idx===0?'Suy luận sắc bén — bạn phá được mã của chính mình trong khi không hề nhìn thấy nó.':'Máy đã suy ra mã trước. Mở Note xem lại nhật ký + snapshot để rút kinh nghiệm cho ván sau nhé.')+lieReveal;
         $('winOverlay').classList.remove('hidden');
         return true;
       }
@@ -1584,6 +1679,7 @@
       if(!S.currentQ){ aiChooseAndAnswer(); return; } /* máy bị dừng ngay lúc đang chọn câu: chọn tiếp rồi trả lời */
       later(function(){
         var v = evalForViewer(S.currentQ, racksAll(), S.turnIdx, rs());
+        if(S.lie && !p.lieUsed && Math.random()<LIE_CHANCE) v = lieValueFor(S.currentQ, v);
         doAnswer(S.turnIdx, v);
       }, 600);
     }
@@ -2258,7 +2354,7 @@
       visibleLogs.slice().reverse().forEach(function(e){
         if(e.codeNo!==lastSeg){ lastSeg = e.codeNo; h += '<div class="jseg">— Giai đoạn Mã #'+e.codeNo+' của bạn —</div>'; }
         var note = S.entryNotes[e.id] || { text:'', pinned:false };
-        h += '<div class="jitem"><div class="jh">Lượt '+e.turn+' · <b>'+esc(e.answererName)+'</b> · Câu '+e.qid+': '+esc(e.qtext)+' → <span class="ans">“'+esc(e.answerText)+'”</span></div>'
+        h += '<div class="jitem"><div class="jh">Lượt '+e.turn+' · <b>'+esc(e.answererName)+'</b> · Câu '+e.qid+': '+esc(e.qtext)+' → <span class="ans">“'+esc(e.answerText)+'”</span>'+(e.lieSelf?' <span class="lietag">🤥 bạn đã nói dối câu này</span>':'')+'</div>'
            + '<button class="snap-toggle" data-snap="'+e.id+'">▸ Xem snapshot bàn lúc trả lời</button>'
            + '<div class="snap hidden" id="snap-'+e.id+'">';
         e.snapshot.forEach(function(r, i){
@@ -2430,7 +2526,7 @@
        Mỗi khách chỉ nhận VIEW đã cá nhân hoá qua topic riêng của mình: rack của chính khách đó bị thay
        bằng placeholder "?", snapshot trong nhật ký cũng theo góc nhìn của khách (rack mình = null).
        Rack của một người không bao giờ nằm trong payload gửi cho chính người đó. Note không rời khỏi máy. */
-    var BUILD_VERSION = '2026-11-22-r9';
+    var BUILD_VERSION = '2026-11-26-r10';
     /* Đường truyền CHÍNH: Supabase Realtime (WebSocket cổng 443 — cổng web chuẩn, hầu như không mạng nào chặn).
        Project dùng chung với game Liêng (game-relay, Singapore). anon key là khoá công khai by design,
        chỉ dùng Realtime broadcast/presence, không có service_role ở bất cứ đâu. */
@@ -2998,7 +3094,7 @@
       if(ONL.hostConn && ONL.hostConn.open) ONL.hostConn.send({ type:'ready', ready:ONL.ready });
     });
     document.getElementById('btnStartOnline').addEventListener('click', function(){ hostStartGame(); });
-    ['cfgQSet','cfgExpert','cfgMaster','cfgNoteMode','cfgBotFill','cfgBotDiff','cfgMaxPlayers'].forEach(function(id){
+    ['cfgQSet','cfgExpert','cfgMaster','cfgLie','cfgNoteMode','cfgBotFill','cfgBotDiff','cfgMaxPlayers'].forEach(function(id){
       document.getElementById(id).addEventListener('change', function(){
         if(HOST && !HOST.started){ HOST.config = readLobbyCfg(); broadcastLobby(); }
       });
@@ -3008,6 +3104,7 @@
         qset: document.getElementById('cfgQSet').value,
         expert: document.getElementById('cfgExpert').value==='1',
         master: document.getElementById('cfgMaster').value==='1',
+        lie: document.getElementById('cfgLie').value==='1',
         noteMode: document.getElementById('cfgNoteMode').value,
         botFill: document.getElementById('cfgBotFill').value==='1',
         botDiff: document.getElementById('cfgBotDiff').value,
@@ -3018,6 +3115,7 @@
       document.getElementById('cfgQSet').value = c.qset;
       document.getElementById('cfgExpert').value = c.expert?'1':'0';
       document.getElementById('cfgMaster').value = c.master?'1':'0';
+      document.getElementById('cfgLie').value = c.lie?'1':'0';
       document.getElementById('cfgNoteMode').value = c.noteMode;
       document.getElementById('cfgBotFill').value = c.botFill?'1':'0';
       document.getElementById('cfgBotDiff').value = c.botDiff;
@@ -3043,6 +3141,7 @@
     function cfgSummary(c){
       return 'Bộ câu hỏi '+(c.qset==='goc'?'Gốc 23':c.qset==='morong'?'Mở rộng 35':'Trộn 23 từ 35')
         +' · Chuyên gia '+(c.expert?'BẬT':'tắt')+' · Master 7777 '+(c.master?'BẬT':'tắt')
+        +' · Nói dối '+(c.lie?'BẬT (1 lần/người)':'tắt')
         +' · Note '+(c.noteMode==='hotro'?'Hỗ trợ':'Giấy')
         +' · Máy bù ghế '+(c.botFill?('có ('+({easy:'Dễ',hard:'Khó',super:'Siêu khó'})[c.botDiff]+')'):'không')
         +' · Tối đa '+(c.maxPlayers||5)+' người';
@@ -3101,7 +3200,7 @@
         });
         var maxP = (HOST.config && HOST.config.maxPlayers) || 5;
         if(HOST.players.filter(function(p){ return p.kind==='human'; }).length>=maxP){ conn.send({ type:'rejected', reason:'Phòng đã đủ '+maxP+' người theo cấu hình của chủ phòng.' }); return; }
-        var p = { peerId:token, name:joinName, kind:'human', score:0, rack:[], codeNo:1, ready:false, connected:true, knownDiscarded:[] };
+        var p = { peerId:token, name:joinName, kind:'human', score:0, rack:[], codeNo:1, ready:false, connected:true, knownDiscarded:[], lieUsed:false };
         HOST.players.push(p); HOST.conns[token]=conn;
         conn.send({ type:'welcome', version: BUILD_VERSION });
         hostFeedAll('👋 <b>'+esc(p.name)+'</b> vừa vào phòng.', false);
@@ -3118,7 +3217,7 @@
       else if(msg.type==='answer'){
         var idx = hostIndexByPeer(token);
         var av = (typeof msg.value==='number' && isFinite(msg.value)) ? Math.round(msg.value) : NaN;
-        if(idx>=0 && HOST.turnIdx===idx && HOST.phase==='answer' && !isNaN(av)) hostDoAnswer(idx, av);
+        if(idx>=0 && HOST.turnIdx===idx && HOST.phase==='answer' && !isNaN(av)) hostDoAnswer(idx, av, !!msg.lie);
       }
       else if(msg.type==='claim'){
         var ci = hostIndexByPeer(token);
@@ -3180,12 +3279,12 @@
         bi++;
       }
       var tiles = shuffle(buildTiles()), size = hostRs();
-      HOST.players.forEach(function(p){ p.rack = tiles.splice(0,size); p.score=0; p.codeNo=1; });
+      HOST.players.forEach(function(p){ p.rack = tiles.splice(0,size); p.score=0; p.codeNo=1; p.lieUsed=false; });
       HOST.deck = tiles; HOST.discard=[];
       var qids;
       if(c.qset==='goc') qids = range(1,23); else if(c.qset==='morong') qids = range(1,35); else qids = shuffle(range(1,35)).slice(0,23);
       HOST.qpool=qids; HOST.qdeck=shuffle(qids.slice()); HOST.qdiscard=[]; HOST.qoffer=[];
-      HOST.turnIdx=0; HOST.turnNo=1; HOST.segLogs=[]; HOST.logs=[]; HOST.lastSnapshot=null; HOST.dummyRotate=0; HOST.started=true; HOST.gameOver=false;
+      HOST.turnIdx=0; HOST.turnNo=1; HOST.segLogs=[]; HOST.logs=[]; HOST.lieEvents=[]; HOST.lastSnapshot=null; HOST.dummyRotate=0; HOST.started=true; HOST.gameOver=false;
       HOST.players.forEach(function(p,i){ if(p.kind==='human' && p.connected) hostSendTo(i, { type:'gameStart', config:c }); });
       enterOnlineGameUI(c, true);
       hostFeedAll('Ván online bắt đầu — phòng '+HOST.code+', mỗi rack '+size+' thẻ. Chúc suy luận vui!', true);
@@ -3227,13 +3326,22 @@
       if(HOST.phase==='choose'){
         var pick = HOST.qoffer[Math.floor(Math.random()*HOST.qoffer.length)];
         if(!hostChooseQuestion(HOST.turnIdx, pick)) return;
-        setTimeout(function(){
-          if(HOST && !HOST.gameOver && HOST.phase==='answer')
-            hostDoAnswer(HOST.turnIdx, evalForViewer(HOST.currentQ, HOST.players.map(function(x){return x.rack;}), HOST.turnIdx, hostRs()));
-        }, 1000);
+        setTimeout(function(){ hostAutoAnswer(); }, 1000);
       } else if(HOST.phase==='answer'){
-        hostDoAnswer(HOST.turnIdx, evalForViewer(HOST.currentQ, HOST.players.map(function(x){return x.rack;}), HOST.turnIdx, hostRs()));
+        hostAutoAnswer();
       }
+    }
+    /* Trả lời tự động cho ghế máy / ghế mất kết nối. Chỉ ghế MÁY (kind 'ai') mới tự
+       dùng lần nói dối của mình; ghế người thật mất kết nối được máy đánh thay thì
+       luôn trả lời thật — không ai được tiêu lần nói dối của người khác hộ họ. */
+    function hostAutoAnswer(){
+      if(!HOST || HOST.gameOver || HOST.phase!=='answer') return;
+      var racks = HOST.players.map(function(x){ return x.rack; });
+      var truth = evalForViewer(HOST.currentQ, racks, HOST.turnIdx, hostRs());
+      var v = truth, lie = false;
+      var p = HOST.players[HOST.turnIdx];
+      if(HOST.config.lie && p.kind==='ai' && !p.lieUsed && Math.random()<LIE_CHANCE){ v = lieValueFor(HOST.currentQ, truth); lie = (v!==truth); }
+      hostDoAnswer(HOST.turnIdx, v, lie);
     }
     function hostStartTurn(){
       if(!HOST || HOST.gameOver) return;
@@ -3250,10 +3358,25 @@
       }
       /* người thật (host hoặc khách): chờ họ chọn 1 trong 3 câu trên máy của họ */
     }
-    function hostDoAnswer(canIdx, v){
+    /* Trọng tài quyết toán đáp án. Nói Dối: đáp án sai CHỈ được chấp nhận khi người
+       trả lời gửi kèm cờ lie, cấu hình phòng đang bật Nói Dối và họ chưa dùng lần
+       nói dối duy nhất của ván — ngoài 3 điều kiện đó, đáp án sai bị trả về như cũ.
+       Khi chấp nhận, host chỉ báo riêng cho người nói dối (lieAck); mọi người khác
+       nhận view/feed y hệt một đáp án thật, không lộ chút dấu vết nào. */
+    function hostDoAnswer(canIdx, v, wantLie){
       var q = HOST.currentQ;
+      var hp = HOST.players[canIdx];
       var correct = evalForViewer(q, HOST.players.map(function(x){return x.rack;}), canIdx, hostRs());
-      if(v!==correct){ hostSendTo(canIdx, { type:'answerWrong' }); return; }
+      var isLie = false;
+      if(v!==correct){
+        if(HOST.config.lie && wantLie && !hp.lieUsed){ isLie = true; }
+        else { hostSendTo(canIdx, { type:'answerWrong' }); return; }
+      }
+      if(isLie){
+        hp.lieUsed = true;
+        HOST.lieEvents.push({ name:hp.name, qid:q.id, turn:HOST.turnNo });
+        hostSendTo(canIdx, { type:'lieAck', qid:q.id });
+      }
       HOST.currentAnswer = v; HOST.qdiscard.push(q.id);
       /* Hết vòng câu hỏi: mọi câu trong bộ đã được trả lời hết mới xáo lại toàn bộ
          (lúc này qoffer rỗng nên không thể trùng câu đang bày — xem bản offline). */
@@ -3270,6 +3393,7 @@
       });
       var entry = { id:HOST.logs.length+1, turn:HOST.turnNo, answererIdx:canIdx, answererName:HOST.players[canIdx].name,
         qid:q.id, qtext:q.text(hostRs()), answerText:answerText(q, v), value:v, snapshotCan:snapCan, changed:changed,
+        lie:isLie, /* bí mật của trọng tài: hostMakeView chỉ dịch thành lieSelf cho đúng người đã nói dối, không phát thô cho ai */
         codeNos: HOST.players.map(function(p){ return p.codeNo; }) };
       HOST.logs.push(entry);
       HOST.segLogs.push({ qid:q.id, answererIdx:canIdx, value:v });
@@ -3345,7 +3469,7 @@
       var p = HOST.players[canIdx];
       if(p.score>=hostTarget()){
         HOST.gameOver=true; HOST.phase='over'; clearTimeout(HOST.claimTimer);
-        HOST.players.forEach(function(_, i){ if(HOST.players[i].kind==='human') hostSendTo(i, { type:'win', name:p.name, score:p.score, turns:HOST.turnNo }); });
+        HOST.players.forEach(function(_, i){ if(HOST.players[i].kind==='human') hostSendTo(i, { type:'win', name:p.name, score:p.score, turns:HOST.turnNo, lieMode:!!HOST.config.lie, lies:HOST.lieEvents }); });
         hostBroadcastViews();
         return true;
       }
@@ -3379,7 +3503,8 @@
         var chg = [];
         for(var k3=0;k3<N;k3++) chg.push(!!e.changed[(forCanIdx+k3)%N]);
         return { id:e.id, turn:e.turn, answererIdx:(e.answererIdx-forCanIdx+N)%N, answererName:e.answererName, qid:e.qid, qtext:e.qtext,
-          answerText:e.answerText, value:e.value, snapshot:snap, changed:chg, codeNo: (e.codeNos ? e.codeNos[forCanIdx] : 1) };
+          answerText:e.answerText, value:e.value, snapshot:snap, changed:chg, codeNo: (e.codeNos ? e.codeNos[forCanIdx] : 1),
+          lieSelf: !!e.lie && e.answererIdx===forCanIdx };
       });
       var deckArr=[], qArr=[], i;
       for(i=0;i<HOST.deck.length;i++) deckArr.push({});
@@ -3390,7 +3515,8 @@
         phase: HOST.phase==='choose' ? (forCanIdx===HOST.turnIdx ? 'chooseQ' : 'waitChoose')
              : (HOST.phase==='answer' ? (forCanIdx===HOST.turnIdx ? 'humanAnswer' : 'aiThink') : HOST.phase),
         currentQ: HOST.currentQ ? { id:HOST.currentQ.id } : null,
-        currentAnswer: HOST.currentAnswer, logs:logs, gameOver:HOST.gameOver, myCodeNo: rot[0].codeNo
+        currentAnswer: HOST.currentAnswer, logs:logs, gameOver:HOST.gameOver, myCodeNo: rot[0].codeNo,
+        lieMode: !!HOST.config.lie, myLieUsed: !!rot[0].lieUsed
       };
     }
     function hostBroadcastViews(){
@@ -3451,6 +3577,12 @@
           feedAdd('Bạn trả lời chưa đúng sự thật theo các rack đang thấy — nhìn kỹ lại rồi trả lời lại nhé.', false);
           if(window.SFX) SFX.play('bad');
           break;
+        case 'lieAck':
+          /* Chỉ người nói dối nhận được tin này — xác nhận riêng lần nói dối đã được
+             trọng tài ghi nhận như đáp án thật. */
+          feedAdd('🤥 Bạn vừa <b>nói dối</b> câu '+msg.qid+' — trọng tài đã ghi nhận đáp án như thật, không ai khác hay biết. Đó là lần nói dối duy nhất của bạn trong ván này.', false);
+          if(window.SFX) SFX.play('draw');
+          break;
         case 'claimResult': onlineClaimResult(msg); break;
         case 'win': onlineWin(msg); break;
       }
@@ -3464,6 +3596,7 @@
       var size = c.master?4:3;
       S = {
         master:c.master, expert:c.expert, diff:c.botDiff, noteMode:c.noteMode,
+        lie:!!c.lie, myLieUsed:false, lieArm:false,
         players:[], deck:[], discard:[], qdeck:[], qdiscard:[], qpool:[], qoffer:[],
         turnIdx:0, turnNo:1, phase:'boot', currentQ:null, currentAnswer:null,
         segLogs:[], logs:[], entryNotes:{}, generalNote:'', lastSnapshot:null, dummyRotate:0,
@@ -3488,6 +3621,9 @@
       S.currentQ = qObj; S.currentAnswer = view.currentAnswer;
       S.qoffer = view.qoffer || [];
       S.logs = view.logs; S.gameOver = view.gameOver; S.myCodeNo = view.myCodeNo;
+      S.myLieUsed = !!view.myLieUsed;
+      if(view.lieMode!==undefined) S.lie = !!view.lieMode;
+      if(view.phase!=='humanAnswer') S.lieArm = false;
       S.lastSnapshot = view.logs.length ? view.logs[view.logs.length-1].snapshot : null;
       if(!S.notePages.length){ newNotePage(true); }
       else if(view.myCodeNo !== prevCode){
@@ -3506,9 +3642,9 @@
       if(ONL.hostConn && ONL.hostConn.open) ONL.hostConn.send({ type:'choose', qid:qid });
       else feedAdd('⚠️ Mất kết nối tới chủ phòng, chưa gửi được lựa chọn câu hỏi.', false);
     }
-    function onlineSubmitAnswer(v){
-      if(ONL.isHost && HOST){ hostDoAnswer(HOST.turnIdx, v); return; }
-      if(ONL.hostConn && ONL.hostConn.open) ONL.hostConn.send({ type:'answer', value:v });
+    function onlineSubmitAnswer(v, lie){
+      if(ONL.isHost && HOST){ hostDoAnswer(HOST.turnIdx, v, !!lie); return; }
+      if(ONL.hostConn && ONL.hostConn.open) ONL.hostConn.send({ type:'answer', value:v, lie:!!lie });
       feedAdd('Đã gửi câu trả lời cho chủ phòng…', false);
     }
     function onlineSubmitClaim(guess){
@@ -3536,7 +3672,13 @@
       S.gameOver = true; renderAll();
       if(window.SFX) SFX.play('win');
       document.getElementById('winTitle').textContent = '🏆 '+msg.name+' THẮNG!';
-      document.getElementById('winText').innerHTML = esc(msg.name)+' đạt '+msg.score+' điểm sau '+msg.turns+' lượt trong phòng '+esc(ONL.code)+'.';
+      var lieReveal = '';
+      if(msg.lieMode){
+        lieReveal = (msg.lies && msg.lies.length)
+          ? ' 🤥 <b>Tiết lộ lời nói dối:</b> '+msg.lies.map(function(e){ return esc(e.name)+' nói dối ở câu '+e.qid+' (lượt '+e.turn+')'; }).join('; ')+'.'
+          : ' 🤥 Ván này không ai dùng lần nói dối của mình.';
+      }
+      document.getElementById('winText').innerHTML = esc(msg.name)+' đạt '+msg.score+' điểm sau '+msg.turns+' lượt trong phòng '+esc(ONL.code)+'.'+lieReveal;
       document.getElementById('winOverlay').classList.remove('hidden');
     }
     </script>
